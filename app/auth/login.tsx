@@ -1,30 +1,32 @@
 import { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { authStyles as styles } from '../../styles/auth.styles';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!username || !password) {
       setError('Vui lòng điền đầy đủ thông tin');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/auth/login', { email, password });
+      const res = await api.post('/auth/login', { username, password });
       await setAuth(res.data.token, res.data.user);
       router.replace('/(tabs)/home');
     } catch (err: any) {
@@ -50,42 +52,29 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="email@example.com"
-              placeholderTextColor={Colors.placeholder}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
+          <Input
+            label="Tên người dùng"
+            value={username}
+            onChangeText={setUsername}
+            placeholder="username"
+            autoCapitalize="none"
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Mật khẩu</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor={Colors.placeholder}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
+          <Input
+            label="Mật khẩu"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
+            secureTextEntry
+          />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.btnPrimary, loading && styles.btnDisabled]}
+          <Button
+            title={loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             onPress={handleLogin}
             disabled={loading}
-          >
-            <Text style={styles.btnText}>
-              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-            </Text>
-          </TouchableOpacity>
+          />
 
           <TouchableOpacity
             style={styles.btnSecondary}

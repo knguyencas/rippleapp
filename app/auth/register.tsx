@@ -1,22 +1,23 @@
 import { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { authStyles as styles } from '../../styles/auth.styles';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 
 export default function RegisterScreen() {
   const [form, setForm] = useState({
-    email: '',
-    username: '',
-    password: '',
-    city: '',
-    ageGroup: '18-22',
-  });
+  email: '',
+  username: '',
+  password: '',
+  ageGroup: '18-22',
+});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -62,53 +63,30 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="email@example.com"
-              placeholderTextColor={Colors.placeholder}
-              value={form.email}
-              onChangeText={(v) => update('email', v)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
+          <Input
+            label="Email (không bắt buộc)"
+            value={form.email}
+            onChangeText={(v) => update('email', v)}
+            placeholder="email@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Tên người dùng</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="username"
-              placeholderTextColor={Colors.placeholder}
-              value={form.username}
-              onChangeText={(v) => update('username', v)}
-              autoCapitalize="none"
-            />
-          </View>
+          <Input
+            label="Tên người dùng"
+            value={form.username}
+            onChangeText={(v) => update('username', v)}
+            placeholder="username"
+            autoCapitalize="none"
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Mật khẩu</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor={Colors.placeholder}
-              value={form.password}
-              onChangeText={(v) => update('password', v)}
-              secureTextEntry
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Thành phố (không bắt buộc)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ho Chi Minh City"
-              placeholderTextColor={Colors.placeholder}
-              value={form.city}
-              onChangeText={(v) => update('city', v)}
-            />
-          </View>
+          <Input
+            label="Mật khẩu"
+            value={form.password}
+            onChangeText={(v) => update('password', v)}
+            placeholder="••••••••"
+            secureTextEntry
+          />
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Độ tuổi</Text>
@@ -132,15 +110,11 @@ export default function RegisterScreen() {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.btnPrimary, loading && styles.btnDisabled]}
+          <Button
+            title={loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}
             onPress={handleRegister}
             disabled={loading}
-          >
-            <Text style={styles.btnText}>
-              {loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}
-            </Text>
-          </TouchableOpacity>
+          />
 
           <TouchableOpacity
             style={styles.btnSecondary}
