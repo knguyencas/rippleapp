@@ -1,38 +1,33 @@
 export const Colors = {
-  //Core ocean palette
-  mist:    '#B2EBF2',
-  wave:    '#26C6DA',
-  teal:    '#0097A7',
-  ocean:   '#1976D2',
-  deep:    '#1B3A6B',
-  abyss:   '#0D1B4B',
+  mist:    '#C8EEF4',
+  wave:    '#1BAABD',
+  teal:    '#0A8599',
+  ocean:   '#1565C0',
+  deep:    '#1A3A5C',
+  abyss:   '#0F2744',
 
-  //Surfaces
-  foam:    '#F0F9FF',
-  surface: '#E0F4F8',
-  muted:   '#3A6B8A',
+  foam:    '#F5FBFD',
+  surface: '#E8F4F8',
+  muted:   '#4A7A9B',
 
-  //Text
-  textPrimary:   '#0D1B4B',
-  textSecondary: '#3A6B8A',
+  textPrimary:   '#1A3A5C',
+  textSecondary: '#4A7A9B',
   textLight:     '#FFFFFF',
+  textHint:      '#7FB3CC',
 
-  //Mood colors
-  moodGreat:    '#26C6DA',
-  moodGood:     '#4FC3F7',
-  moodNeutral:  '#B0BEC5',
-  moodTired:    '#4A90B8',
-  moodAnxious:  '#1B3A6B',
-  moodAngry:    '#1976D2',
-  moodLonely:   '#0D1B4B',
-  moodHappy:    '#00BCD4',
+  moodGreat:    '#1BAABD',
+  moodGood:     '#45B3C8',
+  moodNeutral:  '#8FAFC0',
+  moodTired:    '#4A7A9B',
+  moodAnxious:  '#1A3A5C',
+  moodAngry:    '#1565C0',
+  moodLonely:   '#0F2744',
+  moodHappy:    '#00ACC1',
 
-  // Alert levels
-  alertGentle:   '#26C6DA',
-  alertModerate: '#F9A825',
-  alertHigh:     '#E53935',
+  alertGentle:   '#1BAABD',
+  alertModerate: '#E8A020',
+  alertHigh:     '#D32F2F',
 
-  // UI
-  border:      '#B2EBF2',
-  placeholder: '#90CAF9',
+  border:      '#C8EEF4',
+  placeholder: '#7FB3CC',
 };

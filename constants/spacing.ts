@@ -6,9 +6,9 @@ export const Spacing = {
   xl:  32,
   xxl: 48,
 
-  radiusSm: 8,
-  radiusMd: 12,
-  radiusLg: 20,
+  radiusSm:   10,
+  radiusMd:   16,
+  radiusLg:   24,
   radiusFull: 999,
 
   screenPadding: 20,
