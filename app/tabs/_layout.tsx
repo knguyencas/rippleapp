@@ -29,17 +29,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="log"
+        name="journal"
         options={{
-          title: 'Log',
+          title: 'Journal',
           tabBarIcon: ({ focused }) => <TabIcon emoji="✍️" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="insights"
-        options={{
-          title: 'Insights',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -47,6 +40,20 @@ export default function TabsLayout() {
         options={{
           title: 'Chat AI',
           tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="tracker"
+        options={{
+          title: 'Tracker',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,
         }}
       />
     </Tabs>
