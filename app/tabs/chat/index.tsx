@@ -6,6 +6,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../../constants/colors';
 import { useAuthStore } from '../../../stores/auth.store';
+import api from '../../../services/api';
+
 
 interface Message {
   id: string;
@@ -58,19 +60,27 @@ export default function ChatScreen() {
     setLoading(true);
 
     try {
-      await new Promise(r => setTimeout(r, 1200));
-      const mockReplies = [
-        `Mình hiểu cảm giác đó, ${displayName}. Hãy kể thêm cho mình nghe nhé — điều gì đã khiến bạn cảm thấy như vậy?`,
-        'Cảm ơn bạn đã chia sẻ. Cảm xúc của bạn hoàn toàn hợp lý. Bạn có muốn thử một vài bài tập thở để thư giãn không?',
-        'Nghe có vẻ khó khăn thật. Bạn đã ngủ đủ giấc và ăn uống đầy đủ chưa? Đôi khi những điều cơ bản nhất lại ảnh hưởng lớn đến tâm trạng của chúng ta.',
-        'Mình ở đây lắng nghe bạn. Không cần phải vội vã — hãy cứ chia sẻ theo cách của bạn nhé 💙',
-      ];
-      const reply = mockReplies[Math.floor(Math.random() * mockReplies.length)];
+      const res = await api.post(
+        '/chat',
+        {
+          messages: messages
+            .filter(m => m.role === 'user' || m.role === 'assistant')
+            .map(m => ({
+              role: m.role === 'assistant' ? 'assistant' : 'user',
+              content: m.text,
+            }))
+            .concat({ role: 'user', content: text.trim() })
+            .slice(-10),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: reply,
+        text: res.data.reply || 'Mình không hiểu, bạn thử nói lại nhé 💙',
         time: new Date(),
       };
       setMessages(prev => [...prev, aiMsg]);

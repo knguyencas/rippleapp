@@ -34,7 +34,7 @@ export default function RegisterScreen() {
     try {
       const res = await api.post('/auth/register', form);
       await setAuth(res.data.token, res.data.user);
-      router.replace('/(tabs)/home');
+      router.replace('/tabs/home');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Đăng ký thất bại');
     } finally {
@@ -97,7 +97,7 @@ export default function RegisterScreen() {
 
           <TouchableOpacity
             style={styles.btnSecondary}
-            onPress={() => router.push('/(auth)/login')}
+            onPress={() => router.push('/auth/login')}
           >
             <Text style={styles.btnSecondaryText}>
               Đã có tài khoản?{' '}

@@ -28,7 +28,7 @@ export default function LoginScreen() {
     try {
       const res = await api.post('/auth/login', { username, password });
       await setAuth(res.data.token, res.data.user);
-      router.replace('/(tabs)/home');
+      router.replace('/tabs/home');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Đăng nhập thất bại');
     } finally {
@@ -78,7 +78,7 @@ export default function LoginScreen() {
 
           <TouchableOpacity
             style={styles.btnSecondary}
-            onPress={() => router.push('/(auth)/register')}
+            onPress={() => router.push('/auth/register')}
           >
             <Text style={styles.btnSecondaryText}>
               Chưa có tài khoản?{' '}
