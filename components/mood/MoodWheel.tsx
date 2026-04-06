@@ -101,7 +101,7 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
 
   useEffect(() => {
     Animated.spring(slideAnim, {
-      toValue: 0, tension: 60, friction: 12, useNativeDriver: false,
+      toValue: 0, tension: 60, friction: 12, useNativeDriver: Platform.OS !== 'web',
     }).start();
   }, []);
 
@@ -141,7 +141,7 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
     const snapped = current + diff;
     currentDeg.current = snapped;
     Animated.spring(wheelRotation, {
-      toValue: snapped, tension: 80, friction: 10, useNativeDriver: false,
+      toValue: snapped, tension: 80, friction: 10, useNativeDriver: Platform.OS !== 'web',
     }).start();
     setCurrentIdx(idx);
   };

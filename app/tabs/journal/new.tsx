@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Alert, Animated, ScrollView,
+  Alert, Animated, ScrollView, Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,9 +26,9 @@ export default function NewJournalScreen() {
   useEffect(() => {
     if (!toastVisible) return;
     toastAnim.setValue(0);
-    Animated.timing(toastAnim, { toValue: 1, duration: 300, useNativeDriver: false }).start();
+    Animated.timing(toastAnim, { toValue: 1, duration: 300, useNativeDriver: Platform.OS !== 'web' }).start();
     const timer = setTimeout(() => {
-      Animated.timing(toastAnim, { toValue: 0, duration: 250, useNativeDriver: false })
+      Animated.timing(toastAnim, { toValue: 0, duration: 250, useNativeDriver: Platform.OS !== 'web' })
         .start(() => { setToastVisible(false); router.navigate('/tabs/journal'); });
     }, 1800);
     return () => clearTimeout(timer);

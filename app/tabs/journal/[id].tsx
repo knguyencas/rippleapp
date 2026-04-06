@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert, Animated,
+  StyleSheet, ActivityIndicator, Alert, Animated, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -33,9 +33,9 @@ export default function LogDetailScreen() {
   useEffect(() => {
     if (!toastVisible) return;
     toastAnim.setValue(0);
-    Animated.timing(toastAnim, { toValue: 1, duration: 300, useNativeDriver: false }).start();
+    Animated.timing(toastAnim, { toValue: 1, duration: 300, useNativeDriver: Platform.OS !== 'web' }).start();
     const timer = setTimeout(() => {
-      Animated.timing(toastAnim, { toValue: 0, duration: 250, useNativeDriver: false })
+      Animated.timing(toastAnim, { toValue: 0, duration: 250, useNativeDriver: Platform.OS !== 'web' })
         .start(() => { setToastVisible(false); router.navigate('/tabs/journal'); });
     }, 1800);
     return () => clearTimeout(timer);
