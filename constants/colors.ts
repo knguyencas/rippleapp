@@ -16,13 +16,13 @@ export const Colors = {
   textHint:      '#7FB3CC',
 
   moodScale: [
-  '#1A3A5C',
-  '#4A7A9B',
-  '#7FB3CC',
+  '#546E7A',
+  '#7986CB', 
+  '#64B5F6',
   '#CE93D8',
   '#EF9A9A',
   '#B0BEC5',
-  '#92dc90',
+  '#80CBC4',
   '#A5D6A7',
   '#C5E1A5',
   '#FFCC80',

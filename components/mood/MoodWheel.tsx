@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, Animated,
   PanResponder, Dimensions, StyleSheet, Platform,
@@ -23,24 +23,25 @@ export const MOODS = [
   { emoji: '🤩',    name: 'Phấn khởi', desc: 'Tràn đầy năng lượng và niềm vui', score: 5, color: Colors.moodScale[10] },
 ];
 
-const N = MOODS.length;
-const WHEEL_SIZE = width * 0.88;
-const RADIUS = WHEEL_SIZE / 2;
-const INNER_R = WHEEL_SIZE * 0.18;
-const TRACK_R = (RADIUS * 0.72 + INNER_R) / 2 + INNER_R * 0.3;
-const ITEM_SIZE = 44;
+const N            = MOODS.length;
+const WHEEL_SIZE   = width * 0.88;
+const RADIUS       = WHEEL_SIZE / 2;
+const INNER_R      = WHEEL_SIZE * 0.18;
+const TRACK_R      = (RADIUS * 0.72 + INNER_R) / 2 + INNER_R * 0.3;
+const ITEM_SIZE    = 44;
 const DEG_PER_ITEM = 360 / N;
-const INITIAL_IDX = 5;
+const INITIAL_IDX  = 5;
+const CLIP_H       = WHEEL_SIZE / 2 + 20;
 
 function makeWheelSVG(size: number): string {
   const cx = size / 2;
   const cy = size / 2;
-  const R = size / 2 - 1;
-  const r = INNER_R;
+  const R  = size / 2 - 1;
+  const r  = INNER_R;
 
   const paths = MOODS.map((mood, i) => {
-    const a1 = ((i * DEG_PER_ITEM) - 90) * Math.PI / 180;
-    const a2 = (((i + 1) * DEG_PER_ITEM) - 90) * Math.PI / 180;
+    const a1  = ((i * DEG_PER_ITEM) - 90) * Math.PI / 180;
+    const a2  = (((i + 1) * DEG_PER_ITEM) - 90) * Math.PI / 180;
     const ox1 = cx + R * Math.cos(a1);
     const oy1 = cy + R * Math.sin(a1);
     const ox2 = cx + R * Math.cos(a2);
@@ -49,7 +50,7 @@ function makeWheelSVG(size: number): string {
     const iy2 = cy + r * Math.sin(a2);
     const ix1 = cx + r * Math.cos(a1);
     const iy1 = cy + r * Math.sin(a1);
-    const d = [
+    const d   = [
       `M${ox1.toFixed(2)},${oy1.toFixed(2)}`,
       `A${R},${R} 0 0,1 ${ox2.toFixed(2)},${oy2.toFixed(2)}`,
       `L${ix2.toFixed(2)},${iy2.toFixed(2)}`,
@@ -63,26 +64,68 @@ function makeWheelSVG(size: number): string {
 }
 
 const SVG_HTML = makeWheelSVG(WHEEL_SIZE);
-const SVG_URI = `data:image/svg+xml;utf8,${encodeURIComponent(SVG_HTML)}`;
+const SVG_URI  = `data:image/svg+xml;utf8,${encodeURIComponent(SVG_HTML)}`;
+
+function WheelBackground() {
+  if (Platform.OS === 'web') {
+    const Div = 'div' as any;
+    return (
+      <Div
+        style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}
+        dangerouslySetInnerHTML={{ __html: SVG_HTML }}
+      />
+    );
+  }
+  const ImgTag = 'img' as any;
+  return (
+    <ImgTag
+      src={SVG_URI}
+      style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}
+    />
+  );
+}
 
 interface Props {
   onConfirm: (mood: typeof MOODS[0]) => void;
-  onClose: () => void;
+  onClose:   () => void;
 }
 
 export default function MoodWheel({ onConfirm, onClose }: Props) {
   const [currentIdx, setCurrentIdx] = useState(INITIAL_IDX);
-  const initDeg = -((INITIAL_IDX + 0.5) * DEG_PER_ITEM);
-  const slideAnim = useRef(new Animated.Value(400)).current;
-  const wheelRotation = useRef(new Animated.Value(initDeg)).current;
-  const currentDeg = useRef(initDeg);
-  const lastX = useRef(0);
 
-  useState(() => {
+  const initDeg      = -((INITIAL_IDX + 0.5) * DEG_PER_ITEM);
+  const slideAnim    = useRef(new Animated.Value(400)).current;
+  const wheelRotation = useRef(new Animated.Value(initDeg)).current;
+  const currentDeg   = useRef(initDeg);
+  const lastX        = useRef(0);
+
+  useEffect(() => {
     Animated.spring(slideAnim, {
       toValue: 0, tension: 60, friction: 12, useNativeDriver: false,
     }).start();
-  });
+  }, []);
+
+  const rotateDeg = useMemo(() =>
+    wheelRotation.interpolate({
+      inputRange:  [-10000, 10000],
+      outputRange: ['-10000deg', '10000deg'],
+    }), []);
+
+  const negRotateDeg = useMemo(() =>
+    wheelRotation.interpolate({
+      inputRange:  [-10000, 10000],
+      outputRange: ['10000deg', '-10000deg'],
+    }), []);
+
+  const emojiPositions = useMemo(() =>
+    MOODS.map((_, i) => {
+      const centerDeg = (i + 0.5) * DEG_PER_ITEM;
+      const centerRad = (centerDeg * Math.PI) / 180;
+      return {
+        cx: RADIUS + Math.sin(centerRad) * TRACK_R - ITEM_SIZE / 2,
+        cy: RADIUS - Math.cos(centerRad) * TRACK_R - ITEM_SIZE / 2,
+      };
+    }), []);
 
   const getIdxFromDeg = (deg: number) => {
     const normalized = ((-deg) % 360 + 360) % 360;
@@ -90,10 +133,10 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
   };
 
   const snapToIdx = (idx: number) => {
-    const target = -((idx + 0.5) * DEG_PER_ITEM);
+    const target  = -((idx + 0.5) * DEG_PER_ITEM);
     const current = currentDeg.current;
-    let diff = target - (current % 360);
-    if (diff > 180) diff -= 360;
+    let diff      = target - (current % 360);
+    if (diff > 180)  diff -= 360;
     if (diff < -180) diff += 360;
     const snapped = current + diff;
     currentDeg.current = snapped;
@@ -103,9 +146,9 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
     setCurrentIdx(idx);
   };
 
-  const panResponder = PanResponder.create({
+  const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder:  () => true,
     onPanResponderGrant: (e: GestureResponderEvent) => {
       lastX.current = e.nativeEvent.pageX;
     },
@@ -117,7 +160,7 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
       setCurrentIdx(getIdxFromDeg(currentDeg.current));
     },
     onPanResponderRelease: () => snapToIdx(currentIdx),
-  });
+  }), [currentIdx]);
 
   const handleConfirm = () => {
     Animated.timing(slideAnim, { toValue: 400, duration: 200, useNativeDriver: false })
@@ -129,34 +172,11 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
       .start(onClose);
   };
 
-  const rotateDeg = wheelRotation.interpolate({
-    inputRange: [-10000, 10000],
-    outputRange: ['-10000deg', '10000deg'],
-  });
-
-  const WheelBackground = () => {
-    if (Platform.OS === 'web') {
-      const Div = 'div' as any;
-      return (
-        <Div
-          style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}
-          dangerouslySetInnerHTML={{ __html: SVG_HTML }}
-        />
-      );
-    }
-    const ImgTag = 'img' as any;
-    return (
-      <ImgTag
-        src={SVG_URI}
-        style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}
-      />
-    );
-  };
-
   return (
     <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={handleClose}>
       <Animated.View style={[s.sheet, { transform: [{ translateY: slideAnim }] }]}>
         <TouchableOpacity activeOpacity={1} style={{ width: '100%', alignItems: 'center' }}>
+
           <View style={s.handle} />
           <Text style={s.moodEmojiBig}>{MOODS[currentIdx].emoji}</Text>
           <Text style={s.moodName}>{MOODS[currentIdx].name}</Text>
@@ -164,15 +184,16 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
 
           <View style={ls.wheelClip} {...panResponder.panHandlers}>
             <Animated.View style={[ls.wheelInner, { transform: [{ rotate: rotateDeg }] }]}>
+
               <WheelBackground />
 
               {MOODS.map((mood, i) => {
-                const centerDeg = (i + 0.5) * DEG_PER_ITEM;
-                const centerRad = (centerDeg * Math.PI) / 180;
-                const cx = RADIUS + Math.sin(centerRad) * TRACK_R - ITEM_SIZE / 2;
-                const cy = RADIUS - Math.cos(centerRad) * TRACK_R - ITEM_SIZE / 2;
-                const isActive = i === currentIdx;
-                const dist = Math.min(Math.abs(i - currentIdx), N - Math.abs(i - currentIdx));
+                const { cx, cy } = emojiPositions[i];
+                const isActive   = i === currentIdx;
+                const dist       = Math.min(
+                  Math.abs(i - currentIdx),
+                  N - Math.abs(i - currentIdx)
+                );
                 const opacity = isActive ? 1 : Math.max(0.45, 1 - dist * 0.12);
 
                 return (
@@ -185,8 +206,7 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
                       alignItems: 'center', justifyContent: 'center',
                       opacity,
                       transform: [
-                        { rotate: rotateDeg },
-                        { rotate: `-${centerDeg}deg` },
+                        { rotate: negRotateDeg },
                         { scale: isActive ? 1.25 : 0.85 },
                       ],
                     }}
@@ -217,13 +237,12 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
           <TouchableOpacity style={s.skipBtn} onPress={handleClose}>
             <Text style={s.skipText}>Bỏ qua hôm nay</Text>
           </TouchableOpacity>
+
         </TouchableOpacity>
       </Animated.View>
     </TouchableOpacity>
   );
 }
-
-const CLIP_H = WHEEL_SIZE / 2 + 20;
 
 const ls = StyleSheet.create({
   wheelClip: {

@@ -1,265 +1,350 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, RefreshControl, ActivityIndicator,
 } from 'react-native';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '../../../constants/colors';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { Platform } from 'react-native';
+import api from '../../../services/api';
+import { MOODS } from '../../../components/mood/MoodWheel';
 
-const MOCK_LOGS = [
-  { id: '1', date: new Date(2025, 9, 3),  moodEmoji: '😊', moodName: 'Tích cực',  moodColor: Colors.moodScale[8],  preview: 'Hôm nay khá ổn, hoàn thành được mấy task quan trọng...' },
-  { id: '2', date: new Date(2025, 9, 1),  moodEmoji: '😐', moodName: 'Thờ ơ',    moodColor: Colors.moodScale[5],  preview: 'Ngày bình thường, không có gì đặc biệt xảy ra...' },
-  { id: '3', date: new Date(2025, 8, 28), moodEmoji: '😔', moodName: 'Mệt mỏi',  moodColor: Colors.moodScale[3],  preview: 'Kiệt sức sau một tuần dài. Cần nghỉ ngơi nhiều hơn...' },
-  { id: '4', date: new Date(2025, 8, 25), moodEmoji: '😄', moodName: 'Vui vẻ',   moodColor: Colors.moodScale[9],  preview: 'Gặp lại bạn bè sau lâu không gặp, cảm giác thật tuyệt...' },
-  { id: '5', date: new Date(2025, 8, 20), moodEmoji: '😢', moodName: 'Buồn bã',  moodColor: Colors.moodScale[2],  preview: 'Có vài chuyện không như ý, tâm trạng xuống thấp...' },
-  { id: '6', date: new Date(2025, 7, 15), moodEmoji: '🤩', moodName: 'Phấn khởi', moodColor: Colors.moodScale[10], preview: 'Ngày tuyệt vời nhất tháng, mọi thứ đều suôn sẻ...' },
-  { id: '7', date: new Date(2025, 7, 10), moodEmoji: '😰', moodName: 'Lo âu',    moodColor: Colors.moodScale[3],  preview: 'Nhiều deadline cùng lúc, cảm thấy áp lực...' },
-];
+const cardShadow: any = Platform.OS === 'web'
+  ? { boxShadow: '0 2px 8px rgba(44,51,24,0.07)' }
+  : { shadowColor: '#2C3318', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 3 };
 
-const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
-const DAY_NAMES = ['CN','T2','T3','T4','T5','T6','T7'];
-
-function groupByMonth(logs: typeof MOCK_LOGS) {
-  const map = new Map<string, typeof MOCK_LOGS>();
-  logs.forEach(log => {
-    const key = `${log.date.getFullYear()}-${log.date.getMonth()}`;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(log);
-  });
-  return Array.from(map.entries()).map(([key, items]) => {
-    const [year, month] = key.split('-').map(Number);
-    return { label: `${MONTH_NAMES[month]} ${year}`, items };
-  });
+interface Log {
+  id: string;
+  mood: string;
+  moodScore: number;
+  note: string | null;
+  createdAt: string;
 }
 
+function getMoodEmoji(moodName: string): string {
+  const found = MOODS.find(m => m.name.toLowerCase() === moodName?.toLowerCase());
+  return found?.emoji ?? '💭';
+}
+
+function groupByMonth(logs: Log[]) {
+  const groups: { key: string; label: string; logs: Log[] }[] = [];
+  const map: Record<string, number> = {};
+  logs.forEach(log => {
+    const date  = new Date(log.createdAt);
+    const key   = `${date.getFullYear()}-${date.getMonth()}`;
+    const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    if (map[key] === undefined) {
+      map[key] = groups.length;
+      groups.push({ key, label, logs: [] });
+    }
+    groups[map[key]].logs.push(log);
+  });
+  return groups;
+}
+
+const J = {
+  bg:           '#F7F5EE',
+  illustBg:     '#C8DEB0',
+  card:         '#FFFFFF',
+  textPrimary:  '#2C3318',
+  textMuted:    '#7A8C5E',
+  textLight:    '#A8B898',
+  btnBg:        '#3D5C28',
+  btnText:      '#FFFFFF',
+  divider:      '#E5E8DD',
+  shadow: {
+    shadowColor: '#2C3318',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+};
+
 export default function JournalScreen() {
-  const [showAll, setShowAll] = useState(false);
-  const allLogs = MOCK_LOGS;
-  const visibleLogs = showAll ? allLogs : allLogs.slice(0, 5);
-  const groups = groupByMonth(visibleLogs);
+  const router = useRouter();
+  const [logs, setLogs]           = useState<Log[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [todayLogId, setTodayLogId] = useState<string | null>(null);
+
+  const fetchLogs = async () => {
+    try {
+      const [logsRes, todayRes] = await Promise.all([
+        api.get('/logs?limit=50'),
+        api.get('/logs/today'),
+      ]);
+      setLogs(logsRes.data ?? []);
+      setTodayLogId(todayRes.data?.log?.id ?? null);
+    } catch (e) {
+      console.error('fetchLogs error:', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useFocusEffect(useCallback(() => { fetchLogs(); }, []));
+  const onRefresh = () => { setRefreshing(true); fetchLogs(); };
+
+  const goWrite = () =>
+    todayLogId
+      ? router.push(`/tabs/journal/${todayLogId}?edit=true`)
+      : router.push('/tabs/journal/new');
+
+  const grouped = groupByMonth(logs);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={s.safe}>
+        <ActivityIndicator style={{ flex: 1 }} color={J.btnBg} />
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={s.safe}>
-      <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={s.safe} edges={['top']}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={J.btnBg} />
+        }
+      >
 
-        <View style={s.header}>
-          <Text style={s.headerTitle}>Journal</Text>
-          <Text style={s.headerSub}>Ghi lại hành trình cảm xúc của bạn</Text>
+        <View style={s.illustWrap}>
+          {/* TODO: chèn <Image source={require('...')} style={s.illustImg} /> vào đây */}
+          <View style={s.illustPlaceholder} />
+          <Text style={s.pageTitle}>Journal</Text>
         </View>
 
-        <View style={s.quickWrap}>
-          <TouchableOpacity
-            style={s.quickCard}
-            onPress={() => router.push('/tabs/journal/new')}
-          >
-            <Text style={s.quickEmoji}>✍️</Text>
-            <View style={s.quickText}>
-              <Text style={s.quickTitle}>Cập nhật journal hôm nay</Text>
-              <Text style={s.quickSub}>Bạn đang cảm thấy thế nào?</Text>
+        <View style={s.actionSection}>
+
+          <TouchableOpacity style={s.actionCard} onPress={goWrite} activeOpacity={0.85}>
+            <View style={s.actionCardLeft}>
+              <Text style={s.actionCardTitle}>
+                {todayLogId ? 'Chỉnh sửa nhật ký hôm nay' : 'Ghi lại cảm xúc & suy nghĩ của bạn'}
+              </Text>
+              <TouchableOpacity style={s.actionBtn} onPress={goWrite}>
+                <Text style={s.actionBtnText}>
+                  {todayLogId ? 'Tiếp tục viết' : 'Bắt đầu viết'}
+                </Text>
+              </TouchableOpacity>
             </View>
-            <Text style={s.quickArrow}>→</Text>
+            <Text style={s.actionChevron}>›</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={s.actionCard} onPress={() => router.push('/tabs/journal/new')} activeOpacity={0.85}>
+            <View style={s.actionCardLeft}>
+              <Text style={s.actionCardTitle}>Lưu lại những khoảnh khắc yêu thích</Text>
+              <TouchableOpacity style={s.actionBtn} onPress={() => router.push('/tabs/journal/new')}>
+                <Text style={s.actionBtnText}>Thêm ảnh</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={s.actionChevron}>›</Text>
+          </TouchableOpacity>
+
         </View>
 
-        {groups.map((group, gi) => (
-          <View key={gi} style={s.monthSection}>
-            <View style={s.monthHeader}>
-              <View style={s.monthDot} />
-              <Text style={s.monthLabel}>{group.label}</Text>
-              <View style={s.monthLine} />
-            </View>
-
-            {group.items.map((log, idx) => {
-              const globalIdx = allLogs.findIndex(l => l.id === log.id);
-              const faded = !showAll && globalIdx >= 3;
-              const dayName = DAY_NAMES[log.date.getDay()];
-              const dateNum = log.date.getDate();
-
-              return (
-                <TouchableOpacity
-                  key={log.id}
-                  style={[s.logRow, faded && s.logRowFaded]}
-                  onPress={() => !faded && router.push(`/tabs/journal/${log.id}`)}
-                  activeOpacity={faded ? 1 : 0.7}
-                >
-                  <View style={s.timelineCol}>
-                    <View style={[s.timelineDot, { backgroundColor: log.moodColor }]} />
-                    {idx < group.items.length - 1 && <View style={s.timelineConnector} />}
-                  </View>
-
-                  <View style={s.logCard}>
-                    <View style={s.logCardTop}>
-                      <View style={[s.dateBadge, { backgroundColor: log.moodColor }]}>
-                        <Text style={s.dateBadgeDay}>{dayName}</Text>
-                        <Text style={s.dateBadgeNum}>{dateNum}</Text>
-                      </View>
-                      <View style={s.logMeta}>
-                        <Text style={s.logMood}>{log.moodEmoji} {log.moodName}</Text>
-                        <Text style={s.logPreview} numberOfLines={2}>{log.preview}</Text>
-                      </View>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+        {logs.length === 0 ? (
+          <View style={s.empty}>
+            <Text style={s.emptyIcon}>📖</Text>
+            <Text style={s.emptyTitle}>Chưa có nhật ký nào</Text>
+            <Text style={s.emptyText}>Hãy ghi lại cảm xúc đầu tiên của bạn!</Text>
           </View>
-        ))}
+        ) : (
+          grouped.map(({ key, label, logs: monthLogs }) => (
+            <View key={key} style={s.monthSection}>
+              {/* Month header */}
+              <Text style={s.monthTitle}>{label}</Text>
 
-        {!showAll && allLogs.length > 5 && (
-          <TouchableOpacity style={s.viewAll} onPress={() => setShowAll(true)}>
-            <Text style={s.viewAllText}>Xem tất cả {allLogs.length} entries →</Text>
-          </TouchableOpacity>
+              {/* Entries */}
+              {monthLogs.map((log, idx) => {
+                const date    = new Date(log.createdAt);
+                const isToday = new Date().toDateString() === date.toDateString();
+                const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+                const day     = date.getDate();
+                return (
+                  <TouchableOpacity
+                    key={log.id}
+                    style={[
+                      s.entryRow,
+                      idx < monthLogs.length - 1 && s.entryRowBorder,
+                      isToday && s.entryRowToday,
+                    ]}
+                    onPress={() => router.push(`/tabs/journal/${log.id}`)}
+                    activeOpacity={0.7}
+                  >
+                    {/* Date column */}
+                    <View style={s.dateCol}>
+                      <Text style={s.dateWeekday}>{weekday}</Text>
+                      <Text style={s.dateDay}>{day}</Text>
+                    </View>
+
+                    <View style={s.entryContent}>
+                      {log.note ? (
+                        <Text style={s.entryText} numberOfLines={3}>
+                          {log.note}
+                        </Text>
+                      ) : (
+                        <Text style={s.entryEmpty}>
+                          {getMoodEmoji(log.mood)}  {log.mood}
+                        </Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))
         )}
 
-        <View style={{ height: 32 }} />
+        <View style={{ height: 48 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.foam },
-  scroll: { flex: 1 },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 20,
+  safe: { flex: 1, backgroundColor: J.bg },
+
+  illustWrap: {
+    backgroundColor: J.illustBg,
+    alignItems: 'center',
+    paddingBottom: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
-  headerTitle: {
+  illustPlaceholder: {
+    width: '100%',
+    height: 200,
+  },
+  illustImg: {
+    width: '100%',
+    height: 200,
+    resizeMode: 'contain',
+  },
+  pageTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 28,
-    color: Colors.textPrimary,
-    marginBottom: 4,
-  },
-  headerSub: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  quickWrap: {
-    paddingHorizontal: 24,
-    marginBottom: 28,
-  },
-  quickCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.teal,
-    borderRadius: 16,
-    padding: 18,
-    gap: 14,
-  },
-  quickEmoji: { fontSize: 28 },
-  quickText: { flex: 1 },
-  quickTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 15,
-    color: Colors.textLight,
-    marginBottom: 3,
-  },
-  quickSub: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  quickArrow: {
-    fontSize: 18,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  monthSection: {
-    paddingHorizontal: 24,
+    color: J.textPrimary,
+    marginTop: 4,
     marginBottom: 8,
   },
-  monthHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 10,
-  },
-  monthDot: {
-    width: 10, height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.teal,
-  },
-  monthLabel: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-    color: Colors.textPrimary,
-  },
-  monthLine: {
-    flex: 1, height: 1,
-    backgroundColor: Colors.border,
-  },
-  logRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    gap: 14,
-  },
-  logRowFaded: {
-    opacity: 0.35,
-  },
-  timelineCol: {
-    width: 16,
-    alignItems: 'center',
-    paddingTop: 6,
-  },
-  timelineDot: {
-    width: 12, height: 12,
-    borderRadius: 6,
-    marginBottom: 4,
-  },
-  timelineConnector: {
-    flex: 1, width: 2,
-    backgroundColor: Colors.border,
-    minHeight: 40,
-  },
-  logCard: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
-  },
-  logCardTop: {
-    flexDirection: 'row',
+
+  actionSection: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
     gap: 12,
   },
-  dateBadge: {
-    width: 40, height: 48,
-    borderRadius: 10,
+  actionCard: {
+    backgroundColor: J.card,
+    borderRadius: 16,
+    padding: 18,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    ...cardShadow,
   },
-  dateBadgeDay: {
+  actionCardLeft: { flex: 1, gap: 12 },
+  actionCardTitle: {
     fontFamily: 'Nunito_600SemiBold',
-    fontSize: 9,
-    color: 'rgba(255,255,255,0.85)',
+    fontSize: 14,
+    color: J.textPrimary,
+    lineHeight: 20,
   },
-  dateBadgeNum: {
+  actionBtn: {
+    backgroundColor: J.btnBg,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    alignSelf: 'flex-start',
+  },
+  actionBtnText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: J.btnText,
+  },
+  actionChevron: {
+    fontSize: 24,
+    color: J.textLight,
+    marginLeft: 8,
+  },
+
+  monthSection: {
+    paddingHorizontal: 16,
+    paddingTop: 28,
+  },
+  monthTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 18,
-    color: Colors.textLight,
-    lineHeight: 22,
+    color: J.textPrimary,
+    marginBottom: 12,
   },
-  logMeta: { flex: 1 },
-  logMood: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: Colors.textPrimary,
-    marginBottom: 5,
+
+  entryRow: {
+    flexDirection: 'row',
+    paddingVertical: 14,
+    alignItems: 'flex-start',
+    gap: 14,
   },
-  logPreview: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 12,
-    color: Colors.textSecondary,
-    lineHeight: 17,
+  entryRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: J.divider,
   },
-  viewAll: {
+  entryRowToday: {
+    backgroundColor: '#F0F7E8',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+  },
+
+  dateCol: {
+    width: 36,
     alignItems: 'center',
-    paddingVertical: 16,
-    marginHorizontal: 24,
+    paddingTop: 2,
   },
-  viewAllText: {
+  dateWeekday: {
     fontFamily: 'Nunito_600SemiBold',
+    fontSize: 11,
+    color: J.textMuted,
+    textTransform: 'uppercase',
+  },
+  dateDay: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 22,
+    color: J.textPrimary,
+    lineHeight: 26,
+  },
+
+  entryContent: { flex: 1 },
+  entryText: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 13,
+    color: J.textMuted,
+    lineHeight: 20,
+  },
+  entryEmpty: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 13,
+    color: J.textLight,
+    fontStyle: 'italic',
+  },
+
+  // Empty state
+  empty: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 40,
+    gap: 10,
+  },
+  emptyIcon:  { fontSize: 48 },
+  emptyTitle: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 18,
+    color: J.textPrimary,
+  },
+  emptyText: {
+    fontFamily: 'Nunito_400Regular',
     fontSize: 14,
-    color: Colors.teal,
+    color: J.textMuted,
+    textAlign: 'center',
   },
 });
