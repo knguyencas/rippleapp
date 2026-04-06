@@ -15,7 +15,13 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMotionUsageDescription": "Ripple dùng cảm biến chuyển động để đếm số bước chân của bạn mỗi ngày."
+        "NSMotionUsageDescription": "Ripple dùng cảm biến chuyển động để đếm số bước chân của bạn mỗi ngày.",
+        "NSHealthShareUsageDescription": "Ripple đọc dữ liệu bước chân và giấc ngủ từ Apple Health để theo dõi sức khoẻ của bạn.",
+        "NSHealthUpdateUsageDescription": "Ripple ghi dữ liệu sức khoẻ vào Apple Health."
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.background-delivery": true
       }
     },
     "android": {
@@ -28,7 +34,11 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.knguyencas.ripple",
       "permissions": [
-        "android.permission.ACTIVITY_RECOGNITION"
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.WRITE_STEPS",
+        "android.permission.health.WRITE_SLEEP"
       ]
     },
     "web": {
@@ -42,6 +52,12 @@
         "expo-sensors",
         {
           "motionPermission": "Ripple dùng cảm biến chuyển động để đếm số bước chân của bạn mỗi ngày."
+        }
+      ],
+      [
+        "react-native-health-connect",
+        {
+          "package": "com.knguyencas.ripple"
         }
       ]
     ],
