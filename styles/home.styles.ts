@@ -10,9 +10,10 @@ export const homeStyles = StyleSheet.create({
   scroll: {
     flex: 1,
     paddingHorizontal: Spacing.screenPadding,
+    paddingTop: 8,
   },
   header: {
-    paddingTop: 56,
+    paddingTop: 12,
     paddingBottom: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
