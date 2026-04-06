@@ -143,7 +143,10 @@ export default function JournalEntryForm({
         Alert.alert('Cần quyền microphone', 'Vui lòng cấp quyền truy cập microphone.');
         return;
       }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
       const { recording: newRec } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
@@ -185,7 +188,6 @@ export default function JournalEntryForm({
   };
 
   const togglePlay = async (idx: number) => {
-    // If already playing this one → stop
     if (playingIdx === idx) {
       await soundRef.current?.stopAsync();
       await soundRef.current?.unloadAsync();
@@ -193,19 +195,26 @@ export default function JournalEntryForm({
       setPlayingIdx(null);
       return;
     }
-    // Stop previous
+
     if (soundRef.current) {
       await soundRef.current.stopAsync();
       await soundRef.current.unloadAsync();
       soundRef.current = null;
     }
-    setPlayingIdx(idx);
+
     try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+      });
+
       const { sound } = await Audio.Sound.createAsync(
         { uri: audios[idx].uri },
         { shouldPlay: true }
       );
       soundRef.current = sound;
+      setPlayingIdx(idx);
+
       sound.setOnPlaybackStatusUpdate(status => {
         if (status.isLoaded && status.didJustFinish) {
           setPlayingIdx(null);
