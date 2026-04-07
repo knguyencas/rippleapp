@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity,
-  Image, StyleSheet, Alert, Animated, Platform,
+import { View, Text, TextInput, TouchableOpacity,
+  Image, Alert, Animated, Platform,
   Dimensions, ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -9,26 +8,10 @@ import { Audio } from 'expo-av';
 import MoodWheel, { MOODS } from '../mood/MoodWheel';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
+import { journalFormStyles as s, J, journalCardShadow as cardShadow } from '../../styles/journal.styles';
 
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 48 - 12) / 3;
-
-export const J = {
-  bg:          '#EEF3EA',
-  card:        '#FFFFFF',
-  textPrimary: '#2C3E2D',
-  textMuted:   '#7A9B7D',
-  placeholder: '#B5C9B7',
-  accent:      '#5B8A5E',
-  deleteRed:   '#C0392B',
-  border:      '#DDE8DA',
-  micBg:       '#6A9B6D',
-  micActive:   '#C0392B',
-};
-
-export const cardShadow: any = Platform.OS === 'web'
-  ? { boxShadow: '0 2px 8px rgba(44,62,45,0.08)' }
-  : { shadowColor: '#2C3E2D', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 };
 
 export interface AudioItem {
   id?:   string;
@@ -391,69 +374,3 @@ export default function JournalEntryForm({
   );
 }
 
-const s = StyleSheet.create({
-  card:      { backgroundColor: J.card, borderRadius: 20, padding: 18, ...cardShadow },
-  cardTitle: { fontFamily: 'Nunito_700Bold', fontSize: 15, color: J.textPrimary, marginBottom: 12 },
-
-  moodCard:   { paddingVertical: 14 },
-  moodRow:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  moodEmoji:  { fontSize: 36 },
-  moodName:   { fontFamily: 'Nunito_700Bold', fontSize: 15, color: J.textPrimary },
-  moodDesc:   { fontFamily: 'Nunito_400Regular', fontSize: 12, color: J.textMuted, marginTop: 2 },
-  moodChange: { fontFamily: 'Nunito_600SemiBold', fontSize: 13, color: J.accent },
-  moodChevron:{ fontSize: 22, color: J.placeholder },
-
-  textInput: {
-    fontFamily: 'Nunito_400Regular', fontSize: 14, color: J.textPrimary,
-    minHeight: 120, lineHeight: 22,
-  },
-  charCount: {
-    fontFamily: 'Nunito_400Regular', fontSize: 11,
-    color: J.placeholder, textAlign: 'right', marginTop: 6,
-  },
-
-  photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  photoWrap:  { width: PHOTO_SIZE, height: PHOTO_SIZE, borderRadius: 12, overflow: 'hidden' },
-  photo:      { width: '100%', height: '100%' },
-  photoRemove: {
-    position: 'absolute', top: 4, right: 4,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    width: 20, height: 20, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  photoRemoveText: { color: '#fff', fontSize: 14, lineHeight: 20 },
-  photoAdd: {
-    width: PHOTO_SIZE, height: PHOTO_SIZE, borderRadius: 12,
-    backgroundColor: J.bg, borderWidth: 1.5, borderColor: J.border,
-    borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4,
-  },
-  photoAddIcon:  { fontSize: 22 },
-  photoAddLabel: { fontFamily: 'Nunito_400Regular', fontSize: 10, color: J.textMuted },
-
-  audioList: { gap: 8, marginBottom: 14 },
-  audioRow: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#F0F7E8', borderRadius: 12,
-    paddingVertical: 10, paddingHorizontal: 12, gap: 10,
-  },
-  audioPlayBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: J.accent, alignItems: 'center', justifyContent: 'center',
-  },
-  audioPlayIcon: { color: '#fff', fontSize: 12 },
-  audioLabel:    { flex: 1, fontFamily: 'Nunito_600SemiBold', fontSize: 13, color: J.textPrimary },
-  audioDeleteBtn: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: '#FADBD8', alignItems: 'center', justifyContent: 'center',
-  },
-  audioDeleteIcon: { color: J.deleteRed, fontSize: 18, lineHeight: 22 },
-
-  voiceWrap: { alignItems: 'center', paddingTop: 4, gap: 10 },
-  micBtn: {
-    width: 60, height: 60, borderRadius: 30,
-    backgroundColor: J.micBg, alignItems: 'center', justifyContent: 'center', ...cardShadow,
-  },
-  micBtnActive: { backgroundColor: J.micActive },
-  micIcon:      { fontSize: 26 },
-  voiceHint: { fontFamily: 'Nunito_400Regular', fontSize: 13, color: J.textMuted },
-});

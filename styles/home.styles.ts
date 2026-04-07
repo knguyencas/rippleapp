@@ -95,6 +95,13 @@ export const homeStyles = StyleSheet.create({
     marginBottom: Spacing.sm,
     textAlign: 'center',
   },
+  quickLogInner: { alignItems: 'center', paddingVertical: 8 },
+  quickLogEmoji: { fontSize: 48, marginBottom: 4 },
+  quickLogNote: { fontFamily: 'Nunito_400Regular', fontSize: 12, color: '#4A7A9B', textAlign: 'center', paddingHorizontal: 16 },
+  quickLogHint: { fontFamily: 'Nunito_400Regular', fontSize: 12, color: '#7FB3CC', marginTop: 6 },
+  quickLogEmptyInner: { alignItems: 'center', paddingVertical: 16 },
+  quickLogEmptyEmoji: { fontSize: 40, marginBottom: 8 },
+  quickLogEmptyHint: { fontFamily: 'Nunito_400Regular', fontSize: 12, color: '#9BB5C4' },
   moodRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

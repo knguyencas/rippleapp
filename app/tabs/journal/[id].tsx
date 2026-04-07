@@ -5,9 +5,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import JournalEntryForm, {
-  JournalFormData, AudioItem, J, cardShadow,
-} from '../../../components/journal/JournalEntryForm';
+import JournalEntryForm, { JournalFormData, AudioItem } from '../../../components/journal/JournalEntryForm';
+import {
+  J,
+  journalCardShadow as cardShadow,
+  journalHeaderStyles as h,
+  journalToastStyles as t,
+  journalDetailStyles as s
+} from '../../../styles/journal.styles';
 import { MOODS } from '../../../components/mood/MoodWheel';
 import api from '../../../services/api';
 
@@ -119,30 +124,30 @@ export default function LogDetailScreen() {
     <SafeAreaView style={s.safe}>
 
 
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.navigate('/tabs/journal')} style={s.headerBtn}>
-          <Text style={s.headerBtnText}>‹</Text>
+      <View style={h.header}>
+        <TouchableOpacity onPress={() => router.navigate('/tabs/journal')} style={h.headerBtn}>
+          <Text style={h.headerBtnText}>‹</Text>
         </TouchableOpacity>
 
-        <Text style={s.headerDate} numberOfLines={1}>{dateStr}</Text>
+        <Text style={h.headerDate} numberOfLines={1}>{dateStr}</Text>
 
-        <View style={s.headerRight}>
-          <TouchableOpacity style={s.headerBtn} onPress={handleDelete}>
-            <Text style={[s.headerBtnText, { color: J.deleteRed, fontSize: 18 }]}>X</Text>
+        <View style={h.headerRight}>
+          <TouchableOpacity style={h.headerBtn} onPress={handleDelete}>
+            <Text style={[h.headerBtnText, { color: J.deleteRed, fontSize: 18 }]}>X</Text>
           </TouchableOpacity>
 
           {isToday && (
             isEditing ? (
               <TouchableOpacity
-                style={[s.saveBtn, saving && s.saveBtnOff]}
+                style={[h.saveBtn, saving && h.saveBtnOff]}
                 onPress={handleSave}
                 disabled={saving}
               >
-                <Text style={s.saveBtnText}>{saving ? '…' : '✓'}</Text>
+                <Text style={h.saveBtnText}>{saving ? '…' : '✓'}</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={s.editBtn} onPress={() => setIsEditing(true)}>
-                <Text style={s.editBtnText}>E</Text>
+              <TouchableOpacity style={h.editBtn} onPress={() => setIsEditing(true)}>
+                <Text style={h.editBtnText}>E</Text>
               </TouchableOpacity>
             )
           )}
@@ -246,15 +251,15 @@ export default function LogDetailScreen() {
 
       {toastVisible && (
         <Animated.View
-          style={[s.toast, {
+          style={[t.toast, {
             opacity: toastAnim,
             transform: [{ translateY: toastAnim.interpolate({ inputRange: [0,1], outputRange: [20,0] }) }],
           }]}
         >
-          <Text style={s.toastIcon}>OK</Text>
+          <Text style={t.toastIcon}>OK</Text>
           <View>
-            <Text style={s.toastTitle}>Đã lưu thay đổi!</Text>
-            <Text style={s.toastSub}>Đang quay lại...</Text>
+            <Text style={t.toastTitle}>Đã lưu thay đổi!</Text>
+            <Text style={t.toastSub}>Đang quay lại...</Text>
           </View>
         </Animated.View>
       )}
@@ -263,77 +268,4 @@ export default function LogDetailScreen() {
   );
 }
 
-const PHOTO_SIZE = 90;
 
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: J.bg },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-  },
-  headerBtn:     { padding: 6, minWidth: 36, alignItems: 'center' },
-  headerBtnText: { fontSize: 26, color: J.textPrimary, fontFamily: 'Nunito_600SemiBold', lineHeight: 30 },
-  headerDate: {
-    flex: 1, textAlign: 'center',
-    fontFamily: 'Nunito_600SemiBold', fontSize: 14, color: J.textPrimary,
-  },
-  headerRight:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  saveBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: J.accent, alignItems: 'center', justifyContent: 'center',
-  },
-  saveBtnOff:  { backgroundColor: J.border },
-  saveBtnText: { color: '#fff', fontFamily: 'Nunito_700Bold', fontSize: 17 },
-  editBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: J.border, alignItems: 'center', justifyContent: 'center',
-  },
-  editBtnText: { fontSize: 16 },
-
-  scrollContent: { paddingHorizontal: 16, paddingTop: 4, gap: 14 },
-
-
-  card: {
-    backgroundColor: J.card, borderRadius: 20, padding: 18, ...cardShadow,
-  },
-  cardTitle: { fontFamily: 'Nunito_700Bold', fontSize: 15, color: J.textPrimary, marginBottom: 12 },
-  moodRow:   { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  moodEmoji: { fontSize: 36 },
-  moodName:  { fontFamily: 'Nunito_700Bold', fontSize: 15, color: J.textPrimary },
-  moodDesc:  { fontFamily: 'Nunito_400Regular', fontSize: 12, color: J.textMuted, marginTop: 2 },
-  noteText:  { fontFamily: 'Nunito_400Regular', fontSize: 14, color: J.textMuted, lineHeight: 22 },
-  noteEmpty: { fontFamily: 'Nunito_400Regular', fontSize: 13, color: J.placeholder, fontStyle: 'italic' },
-
-  photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  photoWrap:  { width: PHOTO_SIZE, height: PHOTO_SIZE, borderRadius: 12, overflow: 'hidden' },
-  photo:      { width: '100%', height: '100%' },
-
-  audioRow: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#F0F7E8', borderRadius: 12,
-    paddingVertical: 10, paddingHorizontal: 12,
-    gap: 10, marginBottom: 6,
-  },
-  audioPlayIcon: { fontSize: 16 },
-  audioLabel: { fontFamily: 'Nunito_600SemiBold', fontSize: 13, color: J.textPrimary },
-
-  nlpCard: { backgroundColor: '#F0F7E8' },
-  nlpRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: J.border,
-  },
-  nlpLabel: { fontFamily: 'Nunito_400Regular', fontSize: 13, color: J.textMuted },
-  nlpValue: { fontFamily: 'Nunito_600SemiBold', fontSize: 13, color: J.textPrimary },
-
-  toast: {
-    position: 'absolute', bottom: 36, left: 20, right: 20, zIndex: 9999,
-    backgroundColor: J.textPrimary, borderRadius: 16,
-    paddingVertical: 14, paddingHorizontal: 18,
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    ...cardShadow,
-  },
-  toastIcon:  { fontSize: 22 },
-  toastTitle: { fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#fff' },
-  toastSub:   { fontFamily: 'Nunito_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
-});

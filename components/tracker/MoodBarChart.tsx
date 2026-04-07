@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Colors } from '../../constants/colors';
+import { moodBarChartStyles as s } from '../../styles/tracker.styles';
 
 interface DayData {
   day: string;
@@ -70,88 +71,3 @@ export default function MoodBarChart({ weekData, monthData }: Props) {
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  card: {
-    marginHorizontal: 24,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-    color: Colors.textPrimary,
-  },
-  toggle: {
-    flexDirection: 'row',
-    backgroundColor: Colors.foam,
-    borderRadius: 10,
-    padding: 3,
-  },
-  toggleBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  toggleBtnActive: { backgroundColor: Colors.teal },
-  toggleText: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  toggleTextActive: { color: Colors.textLight },
-  chart: {
-    flexDirection: 'row',
-    height: BAR_MAX_H + 50,
-  },
-  yAxis: {
-    width: 16,
-    justifyContent: 'space-between',
-    paddingBottom: 24,
-    paddingTop: 20,
-  },
-  yLabel: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 9,
-    color: Colors.textSecondary,
-    textAlign: 'right',
-  },
-  bars: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingLeft: 8,
-    position: 'relative',
-  },
-  gridLine: {
-    position: 'absolute',
-    left: 8, right: 0,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  barCol: { flex: 1, alignItems: 'center' },
-  barEmoji: { fontSize: 12, marginBottom: 4, height: 18 },
-  barBg: {
-    width: 20,
-    height: BAR_MAX_H,
-    backgroundColor: Colors.border,
-    borderRadius: 4,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-  },
-  barFill: { width: '100%', borderRadius: 4 },
-  barLabel: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 10,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-});

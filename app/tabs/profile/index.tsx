@@ -1,7 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '../../../constants/colors';
+import { commonStyles as c } from '../../../styles/common.styles';
+import { profileStyles as s } from '../../../styles/profile.styles';
 import { useAuthStore } from '../../../stores/auth.store';
 
 const SECTION_ITEMS = [
@@ -42,7 +44,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={c.safe}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
         <View style={s.header}>
@@ -137,195 +139,3 @@ export default function ProfileScreen() {
     </SafeAreaView>
   );
 }
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.foam },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  headerTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 28,
-    color: Colors.textPrimary,
-  },
-  avatarCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    marginHorizontal: 24,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    gap: 14,
-  },
-  avatarCircle: {
-    width: 56, height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.teal,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 20,
-    color: Colors.textLight,
-  },
-  avatarInfo: { flex: 1 },
-  avatarName: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-    color: Colors.textPrimary,
-    marginBottom: 2,
-  },
-  avatarSub: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  avatarAge: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  editBtn: {
-    borderWidth: 1.5,
-    borderColor: Colors.teal,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  editBtnText: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 13,
-    color: Colors.teal,
-  },
-  streakCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    marginHorizontal: 24,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  streakLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  streakFire: { fontSize: 24 },
-  streakRight: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  streakNum: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 18,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  streakLabel: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 10,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  streakDivider: {
-    width: 1, height: 36,
-    backgroundColor: Colors.border,
-    marginHorizontal: 8,
-  },
-  reminderCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    marginHorizontal: 24,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-  },
-  reminderLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  reminderIcon: { fontSize: 22 },
-  reminderLabel: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: Colors.textPrimary,
-    marginBottom: 2,
-  },
-  reminderSub: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 11,
-    color: Colors.textSecondary,
-  },
-  section: {
-    paddingHorizontal: 24,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  sectionCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  settingRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  settingIcon: { fontSize: 18, width: 24 },
-  settingLabel: {
-    flex: 1,
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: Colors.textPrimary,
-  },
-  settingArrow: {
-    fontSize: 20,
-    color: Colors.textSecondary,
-  },
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    gap: 10,
-    borderWidth: 1.5,
-    borderColor: Colors.alertHigh + '40',
-  },
-  logoutIcon: { fontSize: 18 },
-  logoutText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 15,
-    color: Colors.alertHigh,
-  },
-  version: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 12,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    paddingVertical: 8,
-  },
-});

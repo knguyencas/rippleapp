@@ -2,9 +2,9 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, Animated,
   PanResponder, Dimensions, StyleSheet, Platform,
-  GestureResponderEvent
+  GestureResponderEvent, Modal
 } from 'react-native';
-import { moodWheelStyles as s } from '../../styles/mood-wheel.styles';
+import { moodWheelStyles as s, wheelStyles as ls } from '../../styles/mood-wheel.styles';
 import { Colors } from '../../constants/colors';
 
 const { width } = Dimensions.get('window');
@@ -173,132 +173,75 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
   };
 
   return (
-    <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={handleClose}>
-      <Animated.View style={[s.sheet, { transform: [{ translateY: slideAnim }] }]}>
-        <TouchableOpacity activeOpacity={1} style={{ width: '100%', alignItems: 'center' }}>
+    <Modal visible transparent animationType="none" statusBarTranslucent>
+      <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={handleClose}>
+        <Animated.View style={[s.sheet, { transform: [{ translateY: slideAnim }] }]}>
+          <TouchableOpacity activeOpacity={1} style={{ width: '100%', alignItems: 'center' }}>
 
-          <View style={s.handle} />
-          <Text style={s.moodEmojiBig}>{MOODS[currentIdx].emoji}</Text>
-          <Text style={s.moodName}>{MOODS[currentIdx].name}</Text>
-          <Text style={s.moodDesc}>{MOODS[currentIdx].desc}</Text>
+            <View style={s.handle} />
+            <Text style={s.moodEmojiBig}>{MOODS[currentIdx].emoji}</Text>
+            <Text style={s.moodName}>{MOODS[currentIdx].name}</Text>
+            <Text style={s.moodDesc}>{MOODS[currentIdx].desc}</Text>
 
-          <View style={ls.wheelClip} {...panResponder.panHandlers}>
-            <Animated.View style={[ls.wheelInner, { transform: [{ rotate: rotateDeg }] }]}>
+            <View style={ls.wheelClip} {...panResponder.panHandlers}>
+              <Animated.View style={[ls.wheelInner, { transform: [{ rotate: rotateDeg }] }]}>
 
-              <WheelBackground />
+                <WheelBackground />
 
-              {MOODS.map((mood, i) => {
-                const { cx, cy } = emojiPositions[i];
-                const isActive   = i === currentIdx;
-                const dist       = Math.min(
-                  Math.abs(i - currentIdx),
-                  N - Math.abs(i - currentIdx)
-                );
-                const opacity = isActive ? 1 : Math.max(0.45, 1 - dist * 0.12);
+                {MOODS.map((mood, i) => {
+                  const { cx, cy } = emojiPositions[i];
+                  const isActive   = i === currentIdx;
+                  const dist       = Math.min(
+                    Math.abs(i - currentIdx),
+                    N - Math.abs(i - currentIdx)
+                  );
+                  const opacity = isActive ? 1 : Math.max(0.45, 1 - dist * 0.12);
 
-                return (
-                  <Animated.View
-                    key={i}
-                    style={{
-                      position: 'absolute',
-                      left: cx, top: cy,
-                      width: ITEM_SIZE, height: ITEM_SIZE,
-                      alignItems: 'center', justifyContent: 'center',
-                      opacity,
-                      transform: [
-                        { rotate: negRotateDeg },
-                        { scale: isActive ? 1.25 : 0.85 },
-                      ],
-                    }}
-                  >
-                    <Text style={{ fontSize: isActive ? 28 : 18 }}>
-                      {mood.emoji}
-                    </Text>
-                  </Animated.View>
-                );
-              })}
+                  return (
+                    <Animated.View
+                      key={i}
+                      style={{
+                        position: 'absolute',
+                        left: cx, top: cy,
+                        width: ITEM_SIZE, height: ITEM_SIZE,
+                        alignItems: 'center', justifyContent: 'center',
+                        opacity,
+                        transform: [
+                          { rotate: negRotateDeg },
+                          { scale: isActive ? 1.25 : 0.85 },
+                        ],
+                      }}
+                    >
+                      <Text style={{ fontSize: isActive ? 28 : 18 }}>
+                        {mood.emoji}
+                      </Text>
+                    </Animated.View>
+                  );
+                })}
 
-              <View style={ls.centerHole} />
-            </Animated.View>
+                <View style={ls.centerHole} />
+              </Animated.View>
 
-            <View style={ls.needleWrap} pointerEvents="none">
-              <View style={ls.needleLine} />
-              <View style={ls.needleTip} />
-              <View style={ls.needleCenter} />
+              <View style={ls.needleWrap} pointerEvents="none">
+                <View style={ls.needleLine} />
+                <View style={ls.needleTip} />
+                <View style={ls.needleCenter} />
+              </View>
             </View>
-          </View>
 
-          <Text style={s.hint}>← Kéo để chọn tâm trạng →</Text>
+            <Text style={s.hint}>← Kéo để chọn tâm trạng →</Text>
 
-          <TouchableOpacity style={s.confirmBtn} onPress={handleConfirm}>
-            <Text style={s.confirmBtnText}>Xác nhận</Text>
+            <TouchableOpacity style={s.confirmBtn} onPress={handleConfirm}>
+              <Text style={s.confirmBtnText}>Xác nhận</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={s.skipBtn} onPress={handleClose}>
+              <Text style={s.skipText}>Bỏ qua hôm nay</Text>
+            </TouchableOpacity>
+
           </TouchableOpacity>
-
-          <TouchableOpacity style={s.skipBtn} onPress={handleClose}>
-            <Text style={s.skipText}>Bỏ qua hôm nay</Text>
-          </TouchableOpacity>
-
-        </TouchableOpacity>
-      </Animated.View>
-    </TouchableOpacity>
+        </Animated.View>
+      </TouchableOpacity>
+    </Modal>
   );
 }
-
-const ls = StyleSheet.create({
-  wheelClip: {
-    width: WHEEL_SIZE,
-    height: CLIP_H,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  wheelInner: {
-    width: WHEEL_SIZE,
-    height: WHEEL_SIZE,
-    position: 'absolute',
-    top: 0, left: 0,
-  },
-  centerHole: {
-    position: 'absolute',
-    width: INNER_R * 2,
-    height: INNER_R * 2,
-    borderRadius: INNER_R,
-    backgroundColor: '#F5FBFD',
-    top: RADIUS - INNER_R,
-    left: RADIUS - INNER_R,
-  },
-  needleWrap: {
-    position: 'absolute',
-    top: 0, left: 0,
-    width: WHEEL_SIZE,
-    height: CLIP_H,
-  },
-  needleLine: {
-    position: 'absolute',
-    width: 3,
-    height: RADIUS - INNER_R - 6,
-    backgroundColor: '#1A3A5C',
-    top: INNER_R + 4,
-    left: WHEEL_SIZE / 2 - 1.5,
-    borderRadius: 2,
-  },
-  needleTip: {
-    position: 'absolute',
-    top: INNER_R - 4,
-    left: WHEEL_SIZE / 2 - 6,
-    width: 0, height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderBottomWidth: 10,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#1A3A5C',
-  },
-  needleCenter: {
-    position: 'absolute',
-    width: 14, height: 14,
-    borderRadius: 7,
-    backgroundColor: '#1A3A5C',
-    top: RADIUS - 7,
-    left: WHEEL_SIZE / 2 - 7,
-  },
-});

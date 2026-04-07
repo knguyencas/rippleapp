@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { ScrollView, View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../../constants/colors';
+import { commonStyles as c } from '../../../styles/common.styles';
+import { trackerScreenStyles as s } from '../../../styles/tracker.styles';
 import StatsRow from '../../../components/tracker/StatsRow';
 import MoodBarChart from '../../../components/tracker/MoodBarChart';
 import DailyTrackers from '../../../components/tracker/DailyTrackers';
@@ -38,7 +40,7 @@ const AI_INSIGHTS = [
   { icon: '', title: 'Gợi ý',          desc: 'Những ngày bạn ghi journal dài hơn 50 từ, mood hôm sau thường tốt hơn.' },
 ];
 
-const avgScore = WEEK_DATA.reduce((s, d) => s + d.score, 0) / WEEK_DATA.length;
+const avgScore = WEEK_DATA.reduce((sum, d) => sum + d.score, 0) / WEEK_DATA.length;
 
 export default function TrackerScreen() {
   const [trackers, setTrackers] = useState(INITIAL_TRACKERS);
@@ -52,9 +54,8 @@ export default function TrackerScreen() {
   const completedCount = trackers.filter(t => t.current >= t.goal).length;
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={c.safe}>
       <ScrollView showsVerticalScrollIndicator={false}>
-
 
         <View style={s.header}>
           <View>
@@ -67,27 +68,22 @@ export default function TrackerScreen() {
           </View>
         </View>
 
-
         <StatsRow streak={7} avgMood={avgScore.toFixed(1)} totalDays={21} />
-
 
         <MoodBarChart weekData={WEEK_DATA} monthData={MONTH_DATA} />
 
-
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Checklist hôm nay</Text>
+        <View style={c.section}>
+          <Text style={c.sectionTitle}>Checklist hôm nay</Text>
           <DailyTrackers items={trackers} onIncrement={handleIncrement} />
         </View>
 
-
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Nhận định & Lời khuyên</Text>
+        <View style={c.section}>
+          <Text style={c.sectionTitle}>Nhận định & Lời khuyên</Text>
           <PsychPhaseCard avgScore={avgScore} />
         </View>
 
-
-        <View style={s.section}>
-          <Text style={s.sectionSub}>Dựa trên dữ liệu của bạn</Text>
+        <View style={c.section}>
+          <Text style={c.sectionSub}>Dựa trên dữ liệu của bạn</Text>
           <AIInsightCard insights={AI_INSIGHTS} />
         </View>
 
@@ -96,60 +92,3 @@ export default function TrackerScreen() {
     </SafeAreaView>
   );
 }
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.foam },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 20,
-  },
-  headerTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 28,
-    color: Colors.textPrimary,
-    marginBottom: 4,
-  },
-  headerSub: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  completedBadge: {
-    backgroundColor: Colors.teal,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  completedText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 18,
-    color: Colors.textLight,
-  },
-  completedLabel: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  section: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 18,
-    color: Colors.textPrimary,
-    marginBottom: 12,
-  },
-  sectionSub: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginBottom: 12,
-    marginTop: -8,
-  },
-});

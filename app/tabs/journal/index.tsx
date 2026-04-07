@@ -1,17 +1,13 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Platform } from 'react-native';
 import api from '../../../services/api';
 import { MOODS } from '../../../components/mood/MoodWheel';
-
-const cardShadow: any = Platform.OS === 'web'
-  ? { boxShadow: '0 2px 8px rgba(44,51,24,0.07)' }
-  : { shadowColor: '#2C3318', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 3 };
+import { journalIndexStyles as s, J } from '../../../styles/journal.styles';
 
 interface Log {
   id: string;
@@ -41,25 +37,6 @@ function groupByMonth(logs: Log[]) {
   });
   return groups;
 }
-
-const J = {
-  bg:           '#F7F5EE',
-  illustBg:     '#C8DEB0',
-  card:         '#FFFFFF',
-  textPrimary:  '#2C3318',
-  textMuted:    '#7A8C5E',
-  textLight:    '#A8B898',
-  btnBg:        '#3D5C28',
-  btnText:      '#FFFFFF',
-  divider:      '#E5E8DD',
-  shadow: {
-    shadowColor: '#2C3318',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-};
 
 export default function JournalScreen() {
   const router = useRouter();
@@ -112,13 +89,11 @@ export default function JournalScreen() {
       >
 
         <View style={s.illustWrap}>
-
           <View style={s.illustPlaceholder} />
           <Text style={s.pageTitle}>Journal</Text>
         </View>
 
         <View style={s.actionSection}>
-
           <TouchableOpacity style={s.actionCard} onPress={goWrite} activeOpacity={0.85}>
             <View style={s.actionCardLeft}>
               <Text style={s.actionCardTitle}>
@@ -142,7 +117,6 @@ export default function JournalScreen() {
             </View>
             <Text style={s.actionChevron}>›</Text>
           </TouchableOpacity>
-
         </View>
 
         {logs.length === 0 ? (
@@ -154,10 +128,7 @@ export default function JournalScreen() {
         ) : (
           grouped.map(({ key, label, logs: monthLogs }) => (
             <View key={key} style={s.monthSection}>
-
               <Text style={s.monthTitle}>{label}</Text>
-
-
               {monthLogs.map((log, idx) => {
                 const date    = new Date(log.createdAt);
                 const isToday = new Date().toDateString() === date.toDateString();
@@ -174,12 +145,10 @@ export default function JournalScreen() {
                     onPress={() => router.push(`/tabs/journal/${log.id}`)}
                     activeOpacity={0.7}
                   >
-
                     <View style={s.dateCol}>
                       <Text style={s.dateWeekday}>{weekday}</Text>
                       <Text style={s.dateDay}>{day}</Text>
                     </View>
-
                     <View style={s.entryContent}>
                       {log.note ? (
                         <Text style={s.entryText} numberOfLines={3}>
@@ -203,148 +172,3 @@ export default function JournalScreen() {
     </SafeAreaView>
   );
 }
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: J.bg },
-
-  illustWrap: {
-    backgroundColor: J.illustBg,
-    alignItems: 'center',
-    paddingBottom: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  illustPlaceholder: {
-    width: '100%',
-    height: 200,
-  },
-  illustImg: {
-    width: '100%',
-    height: 200,
-    resizeMode: 'contain',
-  },
-  pageTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 28,
-    color: J.textPrimary,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-
-  actionSection: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    gap: 12,
-  },
-  actionCard: {
-    backgroundColor: J.card,
-    borderRadius: 16,
-    padding: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...cardShadow,
-  },
-  actionCardLeft: { flex: 1, gap: 12 },
-  actionCardTitle: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: J.textPrimary,
-    lineHeight: 20,
-  },
-  actionBtn: {
-    backgroundColor: J.btnBg,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    alignSelf: 'flex-start',
-  },
-  actionBtnText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 13,
-    color: J.btnText,
-  },
-  actionChevron: {
-    fontSize: 24,
-    color: J.textLight,
-    marginLeft: 8,
-  },
-
-  monthSection: {
-    paddingHorizontal: 16,
-    paddingTop: 28,
-  },
-  monthTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 18,
-    color: J.textPrimary,
-    marginBottom: 12,
-  },
-
-  entryRow: {
-    flexDirection: 'row',
-    paddingVertical: 14,
-    alignItems: 'flex-start',
-    gap: 14,
-  },
-  entryRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: J.divider,
-  },
-  entryRowToday: {
-    backgroundColor: '#F0F7E8',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-  },
-
-  dateCol: {
-    width: 36,
-    alignItems: 'center',
-    paddingTop: 2,
-  },
-  dateWeekday: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 11,
-    color: J.textMuted,
-    textTransform: 'uppercase',
-  },
-  dateDay: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 22,
-    color: J.textPrimary,
-    lineHeight: 26,
-  },
-
-  entryContent: { flex: 1 },
-  entryText: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 13,
-    color: J.textMuted,
-    lineHeight: 20,
-  },
-  entryEmpty: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 13,
-    color: J.textLight,
-    fontStyle: 'italic',
-  },
-
-
-  empty: {
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 40,
-    gap: 10,
-  },
-  emptyIcon:  { fontSize: 48 },
-  emptyTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 18,
-    color: J.textPrimary,
-  },
-  emptyText: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 14,
-    color: J.textMuted,
-    textAlign: 'center',
-  },
-});

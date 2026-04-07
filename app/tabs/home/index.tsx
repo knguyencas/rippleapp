@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { homeStyles as s } from '../../styles/home.styles';
-import { useAuthStore } from '../../stores/auth.store';
-import { MOODS } from '../../components/mood/MoodWheel';
-import api from '../../services/api';
+import { homeStyles as s } from '../../../styles/home.styles';
+import { useAuthStore } from '../../../stores/auth.store';
+import MoodWheel, { MOODS } from '../../../components/mood/MoodWheel';
+import api from '../../../services/api';
 
 const cardShadow: any = Platform.OS === 'web'
   ? { boxShadow: '0 2px 8px rgba(26,58,92,0.07)' }
@@ -31,10 +31,12 @@ const HABITS = [
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
-  const [todayLog, setTodayLog]   = useState<TodayLog | null>(null);
+  const [todayLog, setTodayLog]     = useState<TodayLog | null>(null);
   const [loadingLog, setLoadingLog] = useState(true);
-  const [habits, setHabits]       = useState([false, false, false]);
-  const [stats, setStats]         = useState({ streak: 0, avgMood: '—', totalDays: 0 });
+  const [habits, setHabits]         = useState([false, false, false]);
+  const [stats, setStats]           = useState({ streak: 0, avgMood: '—', totalDays: 0 });
+  const [showWheel, setShowWheel]   = useState(false);
+  const [savingMood, setSavingMood] = useState(false);
 
   const displayName = user?.displayName || user?.username || 'bạn';
   const initials    = displayName.slice(0, 2).toUpperCase();
@@ -48,7 +50,6 @@ export default function HomeScreen() {
     if (h < 18) return 'Chào buổi chiều';
     return 'Chào buổi tối';
   };
-
 
   useFocusEffect(
     useCallback(() => {
@@ -65,18 +66,16 @@ export default function HomeScreen() {
 
           setTodayLog(todayRes.data?.log ?? null);
 
-
           const logs: TodayLog[] = logsRes.data ?? [];
           if (logs.length > 0) {
             const avg = logs.reduce((s, l) => s + l.moodScore, 0) / logs.length;
             setStats({
-              streak:    logs.length,           // simplified — replace with real streak later
+              streak:    logs.length,
               avgMood:   avg.toFixed(1),
               totalDays: logs.length,
             });
           }
         } catch {
-
         } finally {
           if (active) setLoadingLog(false);
         }
@@ -85,7 +84,48 @@ export default function HomeScreen() {
     }, [])
   );
 
-  const goToLog = () => {
+  const handleMoodConfirm = async (mood: typeof MOODS[0]) => {
+    setShowWheel(false);
+    setSavingMood(true);
+    try {
+      if (todayLog) {
+        await api.put(`/logs/${todayLog.id}`, {
+          mood:      mood.name,
+          moodScore: mood.score,
+        });
+        setTodayLog({ ...todayLog, mood: mood.name, moodScore: mood.score });
+      } else {
+        const res = await api.post('/logs', {
+          mood:      mood.name,
+          moodScore: mood.score,
+          factors:   [],
+          note:      null,
+        });
+        setTodayLog(res.data);
+      }
+    } catch (error: any) {
+      if (error?.response?.status === 409) {
+        const existingId = error.response.data?.existingId;
+        if (existingId) {
+          try {
+            await api.put(`/logs/${existingId}`, {
+              mood:      mood.name,
+              moodScore: mood.score,
+            });
+            setTodayLog(prev => prev ? { ...prev, mood: mood.name, moodScore: mood.score } : null);
+          } catch {
+            Alert.alert('Lỗi', 'Không lưu được, thử lại nhé!');
+          }
+        }
+      } else {
+        Alert.alert('Lỗi', 'Không lưu được, thử lại nhé!');
+      }
+    } finally {
+      setSavingMood(false);
+    }
+  };
+
+  const goToJournal = () => {
     if (todayLog) {
       router.push(`/tabs/journal/${todayLog.id}?edit=true`);
     } else {
@@ -99,7 +139,6 @@ export default function HomeScreen() {
     <SafeAreaView style={s.container} edges={['top']}>
       <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}>
 
-
         <View style={s.header}>
           <View>
             <Text style={s.greeting}>{getGreeting()}</Text>
@@ -112,7 +151,6 @@ export default function HomeScreen() {
             <Text style={s.avatarText}>{initials}</Text>
           </TouchableOpacity>
         </View>
-
 
         <View style={s.summaryRow}>
           <View style={s.summaryCard}>
@@ -129,47 +167,47 @@ export default function HomeScreen() {
           </View>
         </View>
 
-
         <Text style={s.sectionTitle}>Hôm nay bạn thế nào?</Text>
 
-        <TouchableOpacity style={[s.quickLogCard, cardShadow]} onPress={goToLog} activeOpacity={0.85}>
-          {loadingLog ? (
+        <TouchableOpacity
+          style={[s.quickLogCard, cardShadow]}
+          onPress={() => setShowWheel(true)}
+          activeOpacity={0.85}
+        >
+          {loadingLog || savingMood ? (
             <ActivityIndicator color="#1BAABD" style={{ paddingVertical: 20 }} />
           ) : todayLog && moodInfo ? (
-
-            <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-              <Text style={{ fontSize: 48, marginBottom: 4 }}>{moodInfo.emoji}</Text>
+            <View style={s.quickLogInner}>
+              <Text style={s.quickLogEmoji}>{moodInfo.emoji}</Text>
               <Text style={s.quickLogTitle}>{moodInfo.name}</Text>
               {todayLog.note ? (
                 <Text
                   numberOfLines={2}
-                  style={{ fontFamily: 'Nunito_400Regular', fontSize: 12, color: '#4A7A9B', textAlign: 'center', paddingHorizontal: 16 }}
+                  style={s.quickLogNote}
                 >
                   {todayLog.note}
                 </Text>
               ) : null}
-              <Text style={{ fontFamily: 'Nunito_400Regular', fontSize: 12, color: '#7FB3CC', marginTop: 6 }}>
-                Nhấn để chỉnh sửa
+              <Text style={s.quickLogHint}>
+                Nhấn để thay đổi tâm trạng
               </Text>
             </View>
           ) : (
-
-            <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-              <Text style={{ fontSize: 40, marginBottom: 8 }}>~</Text>
+            <View style={s.quickLogEmptyInner}>
+              <Text style={s.quickLogEmptyEmoji}>~</Text>
               <Text style={s.quickLogTitle}>Chạm để ghi lại tâm trạng</Text>
-              <Text style={{ fontFamily: 'Nunito_400Regular', fontSize: 12, color: '#9BB5C4' }}>
-                Mood wheel + nhật ký + ảnh
+              <Text style={s.quickLogEmptyHint}>
+                Chọn mood bằng emotion wheel
               </Text>
             </View>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={s.logBtn} onPress={goToLog}>
+        <TouchableOpacity style={s.logBtn} onPress={goToJournal}>
           <Text style={s.logBtnText}>
             {todayLog ? 'Tiếp tục viết nhật ký' : 'Ghi nhật ký hôm nay'}
           </Text>
         </TouchableOpacity>
-
 
         <Text style={s.sectionTitle}>Thói quen hôm nay</Text>
         {HABITS.map((h, i) => (
@@ -189,6 +227,13 @@ export default function HomeScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {showWheel && (
+        <MoodWheel
+          onConfirm={handleMoodConfirm}
+          onClose={() => setShowWheel(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }

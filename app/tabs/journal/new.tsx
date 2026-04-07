@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet,
+  View, Text, TouchableOpacity,
   Alert, Animated, ScrollView, Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import JournalEntryForm, { JournalFormData, J, cardShadow } from '../../../components/journal/JournalEntryForm';
+import JournalEntryForm, { JournalFormData } from '../../../components/journal/JournalEntryForm';
 import api from '../../../services/api';
+import { J, journalHeaderStyles as h, journalToastStyles as t, journalNewStyles as s } from '../../../styles/journal.styles';
 
 export default function NewJournalScreen() {
   const [formData, setFormData] = useState<JournalFormData>({
@@ -71,19 +72,19 @@ export default function NewJournalScreen() {
   return (
     <SafeAreaView style={s.safe}>
 
-      <View style={s.header}>
+      <View style={h.header}>
         <TouchableOpacity
           onPress={() => router.navigate('/tabs/journal')}
-          style={s.headerBtn}
+          style={h.headerBtn}
         >
-          <Text style={s.headerBtnText}>‹</Text>
+          <Text style={h.headerBtnText}>‹</Text>
         </TouchableOpacity>
 
-        <Text style={s.headerDate}>{dateStr}</Text>
+        <Text style={h.headerDate}>{dateStr}</Text>
 
-        <View style={s.headerRight}>
+        <View style={h.headerRight}>
           <TouchableOpacity
-            style={s.headerBtn}
+            style={h.headerBtn}
             onPress={() =>
               Alert.alert('Xoá nhật ký?', 'Nội dung chưa được lưu sẽ mất.', [
                 { text: 'Huỷ', style: 'cancel' },
@@ -91,15 +92,15 @@ export default function NewJournalScreen() {
               ])
             }
           >
-            <Text style={[s.headerBtnText, { color: J.deleteRed, fontSize: 18 }]}>X</Text>
+            <Text style={[h.headerBtnText, { color: J.deleteRed, fontSize: 18 }]}>X</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[s.saveBtn, !canSave && s.saveBtnOff]}
+            style={[h.saveBtn, !canSave && h.saveBtnOff]}
             onPress={handleSubmit}
             disabled={loading || !canSave}
           >
-            <Text style={s.saveBtnText}>{loading ? '…' : '✓'}</Text>
+            <Text style={h.saveBtnText}>{loading ? '…' : '✓'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -116,15 +117,15 @@ export default function NewJournalScreen() {
 
       {toastVisible && (
         <Animated.View
-          style={[s.toast, {
+          style={[t.toast, {
             opacity: toastAnim,
             transform: [{ translateY: toastAnim.interpolate({ inputRange: [0,1], outputRange: [20,0] }) }],
           }]}
         >
-          <Text style={s.toastIcon}>OK</Text>
+          <Text style={t.toastIcon}>OK</Text>
           <View>
-            <Text style={s.toastTitle}>Đã lưu nhật ký!</Text>
-            <Text style={s.toastSub}>Đang quay lại...</Text>
+            <Text style={t.toastTitle}>Đã lưu nhật ký!</Text>
+            <Text style={t.toastSub}>Đang quay lại...</Text>
           </View>
         </Animated.View>
       )}
@@ -132,38 +133,3 @@ export default function NewJournalScreen() {
     </SafeAreaView>
   );
 }
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: J.bg },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-  },
-  headerBtn:     { padding: 6, minWidth: 36, alignItems: 'center' },
-  headerBtnText: { fontSize: 26, color: J.textPrimary, fontFamily: 'Nunito_600SemiBold', lineHeight: 30 },
-  headerDate: {
-    flex: 1, textAlign: 'center',
-    fontFamily: 'Nunito_600SemiBold', fontSize: 15, color: J.textPrimary,
-  },
-  headerRight:   { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  saveBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: J.accent, alignItems: 'center', justifyContent: 'center',
-  },
-  saveBtnOff: { backgroundColor: J.border },
-  saveBtnText: { color: '#fff', fontFamily: 'Nunito_700Bold', fontSize: 17 },
-
-  scrollContent: { paddingHorizontal: 16, paddingTop: 4 },
-
-  toast: {
-    position: 'absolute', bottom: 36, left: 20, right: 20, zIndex: 9999,
-    backgroundColor: J.textPrimary, borderRadius: 16,
-    paddingVertical: 14, paddingHorizontal: 18,
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    ...cardShadow,
-  },
-  toastIcon:  { fontSize: 22 },
-  toastTitle: { fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#fff' },
-  toastSub:   { fontFamily: 'Nunito_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
-});

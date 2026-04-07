@@ -1,5 +1,6 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Colors } from '../../constants/colors';
+import { psychPhaseStyles as s } from '../../styles/tracker.styles';
 
 interface Props {
   avgScore: number;
@@ -71,65 +72,3 @@ export default function PsychPhaseCard({ avgScore }: Props) {
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  phaseCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-  },
-  phaseTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    gap: 12,
-  },
-  phaseEmoji: { fontSize: 32 },
-  phaseInfo: { flex: 1 },
-  phaseLabel: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginBottom: 2,
-  },
-  phaseName: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-    color: Colors.textPrimary,
-  },
-  scoreBadge: {
-    width: 44, height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scoreText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-  },
-  phaseDesc: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 19,
-  },
-  quoteCard: {
-    backgroundColor: Colors.ocean + '12',
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'flex-start',
-  },
-  quoteIcon: { fontSize: 20, marginTop: 2 },
-  quoteText: {
-    flex: 1,
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 14,
-    color: Colors.textPrimary,
-    fontStyle: 'italic',
-    lineHeight: 21,
-  },
-});

@@ -1,5 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Colors } from '../../constants/colors';
+import { dailyTrackersStyles as s } from '../../styles/tracker.styles';
 
 interface TrackerItem {
   id: string;
@@ -54,66 +55,3 @@ export default function DailyTrackers({ items, onIncrement }: Props) {
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  wrap: { gap: 10 },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
-  },
-  cardLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  emoji: { fontSize: 28 },
-  info: { flex: 1 },
-  name: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 14,
-    color: Colors.textPrimary,
-    marginBottom: 2,
-  },
-  sub: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginBottom: 6,
-  },
-  barBg: {
-    height: 4,
-    backgroundColor: Colors.border,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  barFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  btn: {
-    width: 34, height: 34,
-    borderRadius: 17,
-    borderWidth: 1.5,
-    borderColor: Colors.teal,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnDone: {
-    backgroundColor: Colors.teal,
-    borderColor: Colors.teal,
-  },
-  btnText: {
-    fontSize: 18,
-    color: Colors.teal,
-    lineHeight: 22,
-  },
-  btnTextDone: {
-    color: Colors.textLight,
-    fontSize: 14,
-  },
-});
