@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, ScrollView, TouchableOpacity, Image,
   StyleSheet, ActivityIndicator, Alert, Animated, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -195,7 +195,7 @@ export default function LogDetailScreen() {
                 <View style={s.photosGrid}>
                   {formData.photos.map((uri, i) => (
                     <View key={i} style={s.photoWrap}>
-                      <Animated.Image source={{ uri }} style={s.photo} />
+                      <Image source={{ uri }} style={s.photo} />
                     </View>
                   ))}
                 </View>
