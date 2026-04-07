@@ -49,6 +49,15 @@
       "expo-secure-store",
       "expo-font",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26,
+            "kotlinVersion": "1.9.24"
+          }
+        }
+      ],
+      [
         "expo-sensors",
         {
           "motionPermission": "Ripple dùng cảm biến chuyển động để đếm số bước chân của bạn mỗi ngày."
