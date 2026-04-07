@@ -46,7 +46,6 @@ export default function LoginScreen() {
         <View style={styles.wave2} />
 
         <View style={styles.headerCentered}>
-          <Text style={styles.emoji}>🌊</Text>
           <Text style={styles.titleCentered}>Ripple</Text>
           <Text style={styles.subtitleCentered}>Chào mừng trở lại</Text>
         </View>

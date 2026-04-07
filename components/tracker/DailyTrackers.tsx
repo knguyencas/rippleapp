@@ -31,7 +31,7 @@ export default function DailyTrackers({ items, onIncrement }: Props) {
                 <Text style={s.sub}>
                   {item.current}/{item.goal} {item.unit}
                 </Text>
-                {/* Progress bar */}
+
                 <View style={s.barBg}>
                   <View style={[
                     s.barFill,

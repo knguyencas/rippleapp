@@ -24,9 +24,9 @@ function getMoodInfo(moodName: string) {
 }
 
 const HABITS = [
-  { emoji: '💧', name: 'Uống nước',  sub: 'Mục tiêu 8 ly/ngày' },
-  { emoji: '🌙', name: 'Ngủ đủ giấc', sub: 'Mục tiêu 7-8 tiếng' },
-  { emoji: '🚶', name: 'Vận động',   sub: 'Đi bộ 30 phút' },
+  { emoji: '', name: 'Uống nước',  sub: 'Mục tiêu 8 ly/ngày' },
+  { emoji: '', name: 'Ngủ đủ giấc', sub: 'Mục tiêu 7-8 tiếng' },
+  { emoji: '', name: 'Vận động',   sub: 'Đi bộ 30 phút' },
 ];
 
 export default function HomeScreen() {
@@ -44,12 +44,12 @@ export default function HomeScreen() {
 
   const getGreeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return 'Chào buổi sáng ☀️';
-    if (h < 18) return 'Chào buổi chiều 🌤️';
-    return 'Chào buổi tối 🌙';
+    if (h < 12) return 'Chào buổi sáng';
+    if (h < 18) return 'Chào buổi chiều';
+    return 'Chào buổi tối';
   };
 
-  // Fetch today's log every time this screen is focused
+
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -65,7 +65,7 @@ export default function HomeScreen() {
 
           setTodayLog(todayRes.data?.log ?? null);
 
-          // Compute simple stats from recent logs
+
           const logs: TodayLog[] = logsRes.data ?? [];
           if (logs.length > 0) {
             const avg = logs.reduce((s, l) => s + l.moodScore, 0) / logs.length;
@@ -76,7 +76,7 @@ export default function HomeScreen() {
             });
           }
         } catch {
-          // offline or not logged in yet — keep empty state
+
         } finally {
           if (active) setLoadingLog(false);
         }
@@ -99,7 +99,7 @@ export default function HomeScreen() {
     <SafeAreaView style={s.container} edges={['top']}>
       <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
+
         <View style={s.header}>
           <View>
             <Text style={s.greeting}>{getGreeting()}</Text>
@@ -113,10 +113,10 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Stats row */}
+
         <View style={s.summaryRow}>
           <View style={s.summaryCard}>
-            <Text style={s.summaryValue}>{stats.streak} 🔥</Text>
+            <Text style={s.summaryValue}>{stats.streak}</Text>
             <Text style={s.summaryLabel}>Ngày gần đây</Text>
           </View>
           <View style={s.summaryCard}>
@@ -129,14 +129,14 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Today mood card */}
+
         <Text style={s.sectionTitle}>Hôm nay bạn thế nào?</Text>
 
         <TouchableOpacity style={[s.quickLogCard, cardShadow]} onPress={goToLog} activeOpacity={0.85}>
           {loadingLog ? (
             <ActivityIndicator color="#1BAABD" style={{ paddingVertical: 20 }} />
           ) : todayLog && moodInfo ? (
-            /* Already logged today — show the saved mood */
+
             <View style={{ alignItems: 'center', paddingVertical: 8 }}>
               <Text style={{ fontSize: 48, marginBottom: 4 }}>{moodInfo.emoji}</Text>
               <Text style={s.quickLogTitle}>{moodInfo.name}</Text>
@@ -153,9 +153,9 @@ export default function HomeScreen() {
               </Text>
             </View>
           ) : (
-            /* No log yet today */
+
             <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-              <Text style={{ fontSize: 40, marginBottom: 8 }}>🌊</Text>
+              <Text style={{ fontSize: 40, marginBottom: 8 }}>~</Text>
               <Text style={s.quickLogTitle}>Chạm để ghi lại tâm trạng</Text>
               <Text style={{ fontFamily: 'Nunito_400Regular', fontSize: 12, color: '#9BB5C4' }}>
                 Mood wheel + nhật ký + ảnh
@@ -170,7 +170,7 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Habits */}
+
         <Text style={s.sectionTitle}>Thói quen hôm nay</Text>
         {HABITS.map((h, i) => (
           <TouchableOpacity key={i} style={s.habitCard} onPress={() => toggleHabit(i)}>

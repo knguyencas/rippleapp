@@ -25,7 +25,7 @@ export default function RegisterScreen() {
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleRegister = async () => {
-    if (!form.email || !form.username || !form.password) {
+    if (!form.username || !form.password) {
       setError('Vui lòng điền đầy đủ thông tin');
       return;
     }
@@ -34,7 +34,7 @@ export default function RegisterScreen() {
     try {
       const res = await api.post('/auth/register', form);
       await setAuth(res.data.token, res.data.user);
-      router.replace('/tabs/home');
+      router.replace('/auth/display-name');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Đăng ký thất bại');
     } finally {

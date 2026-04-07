@@ -109,21 +109,21 @@ export default function DisplayNameScreen() {
 
         {step === 0 && (
           <View style={s.stepWrap}>
-            <Text style={s.bigEmoji}>🌊</Text>
+            <Text style={s.bigEmoji}></Text>
             <Text style={s.title}>Chào mừng đến với Ripple</Text>
             <Text style={s.subtitle}>
               Nơi bạn ghi lại cảm xúc,{'\n'}hiểu bản thân hơn mỗi ngày.
             </Text>
-            <Text style={s.hint}>Cho mình biết thêm một chút về bạn nhé ✨</Text>
+            <Text style={s.hint}>Cho mình biết thêm một chút về bạn nhé</Text>
             <TouchableOpacity style={s.btnPrimary} onPress={() => animateNext(1)}>
-              <Text style={s.btnText}>Bắt đầu nào →</Text>
+              <Text style={s.btnText}>Bắt đầu nào</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {step === 1 && (
           <View style={s.stepWrap}>
-            <Text style={s.bigEmoji}>👋</Text>
+            <Text style={s.bigEmoji}></Text>
             <Text style={s.title}>Bạn muốn được gọi là gì?</Text>
             <Text style={s.subtitle}>
               Tên hiển thị có thể là bất cứ thứ gì bạn thích
@@ -137,10 +137,10 @@ export default function DisplayNameScreen() {
               autoFocus
             />
             {displayName ? (
-              <Text style={s.preview}>Xin chào, {displayName} 👋</Text>
+              <Text style={s.preview}>Xin chào, {displayName}</Text>
             ) : null}
             <TouchableOpacity style={s.btnPrimary} onPress={() => animateNext(2)}>
-              <Text style={s.btnText}>Tiếp theo →</Text>
+              <Text style={s.btnText}>Tiếp theo</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => animateNext(2)} style={s.btnSkip}>
               <Text style={s.skipText}>Bỏ qua</Text>
@@ -150,7 +150,7 @@ export default function DisplayNameScreen() {
 
         {step === 2 && (
           <View style={s.stepWrap}>
-            <Text style={s.bigEmoji}>🎂</Text>
+            <Text style={s.bigEmoji}></Text>
             <Text style={s.title}>Bạn bao nhiêu tuổi?</Text>
             <Text style={s.subtitle}>
               Giúp tôi hiểu bạn hơn{'\n'}và cá nhân hóa trải nghiệm.
@@ -218,7 +218,7 @@ export default function DisplayNameScreen() {
               disabled={loading}
             >
               <Text style={s.btnText}>
-                {loading ? 'Đang lưu...' : 'Hoàn tất 🎉'}
+                {loading ? 'Đang lưu...' : 'Hoàn tất'}
               </Text>
             </TouchableOpacity>
           </View>

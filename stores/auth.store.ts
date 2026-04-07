@@ -7,6 +7,7 @@ interface User {
   email?: string;
   username: string;
   displayName?: string | null;
+  ageGroup?: string | null;
 }
 
 interface AuthStore {

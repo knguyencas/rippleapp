@@ -26,16 +26,16 @@ const MONTH_DATA = [
 ];
 
 const INITIAL_TRACKERS = [
-  { id: 'water',    emoji: '💧', name: 'Uống nước',   current: 4, goal: 8,  unit: 'ly',    color: '#90CAF9' },
-  { id: 'sleep',    emoji: '😴', name: 'Giấc ngủ',    current: 7, goal: 8,  unit: 'tiếng', color: '#CE93D8' },
-  { id: 'exercise', emoji: '🏃', name: 'Vận động',    current: 15, goal: 30, unit: 'phút', color: '#A5D6A7' },
-  { id: 'mood',     emoji: '😊', name: 'Check mood',  current: 1, goal: 1,  unit: 'lần',   color: Colors.moodScale[8] },
+  { id: 'water',    emoji: '', name: 'Uống nước',   current: 4, goal: 8,  unit: 'ly',    color: '#90CAF9' },
+  { id: 'sleep',    emoji: '', name: 'Giấc ngủ',    current: 7, goal: 8,  unit: 'tiếng', color: '#CE93D8' },
+  { id: 'exercise', emoji: '', name: 'Vận động',    current: 15, goal: 30, unit: 'phút', color: '#A5D6A7' },
+  { id: 'mood',     emoji: '', name: 'Check mood',  current: 1, goal: 1,  unit: 'lần',   color: Colors.moodScale[8] },
 ];
 
 const AI_INSIGHTS = [
-  { icon: '📈', title: 'Xu hướng tốt',   desc: 'Mood của bạn tăng đều trong 2 tuần gần đây. Giữ vững nhé!' },
-  { icon: '🌙', title: 'Thứ 5 khó khăn', desc: 'Bạn thường cảm thấy mệt mỏi vào thứ 5. Cân nhắc nghỉ ngơi sớm hơn.' },
-  { icon: '💡', title: 'Gợi ý',          desc: 'Những ngày bạn ghi journal dài hơn 50 từ, mood hôm sau thường tốt hơn.' },
+  { icon: '', title: 'Xu hướng tốt',   desc: 'Mood của bạn tăng đều trong 2 tuần gần đây. Giữ vững nhé!' },
+  { icon: '', title: 'Thứ 5 khó khăn', desc: 'Bạn thường cảm thấy mệt mỏi vào thứ 5. Cân nhắc nghỉ ngơi sớm hơn.' },
+  { icon: '', title: 'Gợi ý',          desc: 'Những ngày bạn ghi journal dài hơn 50 từ, mood hôm sau thường tốt hơn.' },
 ];
 
 const avgScore = WEEK_DATA.reduce((s, d) => s + d.score, 0) / WEEK_DATA.length;
@@ -55,7 +55,7 @@ export default function TrackerScreen() {
     <SafeAreaView style={s.safe}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
+
         <View style={s.header}>
           <View>
             <Text style={s.headerTitle}>Tracker</Text>
@@ -67,25 +67,25 @@ export default function TrackerScreen() {
           </View>
         </View>
 
-        {/* Stats */}
+
         <StatsRow streak={7} avgMood={avgScore.toFixed(1)} totalDays={21} />
 
-        {/* Mood Chart */}
+
         <MoodBarChart weekData={WEEK_DATA} monthData={MONTH_DATA} />
 
-        {/* Daily trackers */}
+
         <View style={s.section}>
           <Text style={s.sectionTitle}>Checklist hôm nay</Text>
           <DailyTrackers items={trackers} onIncrement={handleIncrement} />
         </View>
 
-        {/* Psych phase */}
+
         <View style={s.section}>
           <Text style={s.sectionTitle}>Nhận định & Lời khuyên</Text>
           <PsychPhaseCard avgScore={avgScore} />
         </View>
 
-        {/* Insights */}
+
         <View style={s.section}>
           <Text style={s.sectionSub}>Dựa trên dữ liệu của bạn</Text>
           <AIInsightCard insights={AI_INSIGHTS} />

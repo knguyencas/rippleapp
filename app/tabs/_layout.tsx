@@ -2,10 +2,10 @@ import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '../../constants/colors';
 
-function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
+function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   return (
     <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-      <Text style={styles.emoji}>{emoji}</Text>
+      <Text style={[styles.iconText, focused && styles.iconTextActive]}>{label}</Text>
     </View>
   );
 }
@@ -25,35 +25,35 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon label="H" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="journal"
         options={{
           title: 'Journal',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="✍️" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon label="J" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
           title: 'Chat AI',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon label="C" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="tracker"
         options={{
           title: 'Tracker',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon label="T" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon label="P" focused={focused} />,
         }}
       />
     </Tabs>
@@ -83,7 +83,12 @@ const styles = StyleSheet.create({
   iconWrapActive: {
     backgroundColor: Colors.surface,
   },
-  emoji: {
-    fontSize: 18,
+  iconText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 14,
+    color: Colors.muted,
+  },
+  iconTextActive: {
+    color: Colors.teal,
   },
 });

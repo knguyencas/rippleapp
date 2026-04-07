@@ -15,14 +15,14 @@ export function useSleepTracker() {
   useEffect(() => {
     (async () => {
       try {
-        // Restore bedtime from storage (in case app was closed mid-sleep)
+
         const stored = await AsyncStorage.getItem(BEDTIME_KEY);
         if (stored) {
           setBedtime(stored);
           setSleeping(true);
         }
 
-        // Load today's sleep from backend
+
         const res = await healthApi.getToday();
         const todayData = res.data;
         setTotalMinutesToday(todayData.sleep.totalMinutes);
@@ -30,7 +30,7 @@ export function useSleepTracker() {
           setLastSession(todayData.sleep.sessions[0]);
         }
       } catch {
-        // offline or error — keep local state
+
       } finally {
         setLoading(false);
       }
@@ -54,7 +54,7 @@ export function useSleepTracker() {
       const durationMinutes = Math.round(durationMs / 60000);
 
       if (durationMinutes < 1) {
-        // Ignore very short "sleeps" (accidental tap)
+
         setSleeping(false);
         setBedtime(null);
         await AsyncStorage.removeItem(BEDTIME_KEY);
@@ -69,7 +69,7 @@ export function useSleepTracker() {
       setLastSession(res.data);
       setTotalMinutesToday(prev => prev + durationMinutes);
     } catch {
-      // Save failed — silently keep state
+
     } finally {
       setSleeping(false);
       setBedtime(null);

@@ -20,13 +20,13 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id: '0',
     role: 'assistant',
-    text: 'Xin chào! Mình là Ripple AI — người bạn đồng hành cảm xúc của bạn 🌊\n\nBạn đang cảm thấy thế nào hôm nay? Hãy chia sẻ bất cứ điều gì bạn muốn nhé.',
+    text: 'Xin chào! Mình là Ripple AI — người bạn đồng hành cảm xúc của bạn.\n\nBạn đang cảm thấy thế nào hôm nay? Hãy chia sẻ bất cứ điều gì bạn muốn nhé.',
     time: new Date(),
   },
 ];
 
 const QUICK_REPLIES = [
-  'Hôm nay tôi cảm thấy lo lắng 😰',
+  'Hôm nay tôi cảm thấy lo lắng',
   'Tôi không biết mình đang cảm thấy gì',
   'Tôi muốn nói chuyện về ngày hôm nay',
   'Cho tôi một lời khuyên',
@@ -80,7 +80,7 @@ export default function ChatScreen() {
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: res.data.reply || 'Mình không hiểu, bạn thử nói lại nhé 💙',
+        text: res.data.reply || 'Mình không hiểu, bạn thử nói lại nhé.',
         time: new Date(),
       };
       setMessages(prev => [...prev, aiMsg]);
@@ -88,7 +88,7 @@ export default function ChatScreen() {
       const errMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: 'Xin lỗi, mình đang gặp sự cố kết nối. Bạn thử lại sau nhé 🙏',
+        text: 'Xin lỗi, mình đang gặp sự cố kết nối. Bạn thử lại sau nhé.',
         time: new Date(),
       };
       setMessages(prev => [...prev, errMsg]);
@@ -110,7 +110,7 @@ export default function ChatScreen() {
       >
         <View style={s.header}>
           <View style={s.headerAvatar}>
-            <Text style={s.headerAvatarText}>🌊</Text>
+            <Text style={s.headerAvatarText}>R</Text>
           </View>
           <View>
             <Text style={s.headerName}>Ripple AI</Text>
@@ -137,7 +137,7 @@ export default function ChatScreen() {
                 <View style={[s.msgRow, isAI ? s.msgRowAI : s.msgRowUser]}>
                   {isAI && (
                     <View style={s.aiAvatar}>
-                      <Text style={s.aiAvatarText}>🌊</Text>
+                      <Text style={s.aiAvatarText}>R</Text>
                     </View>
                   )}
                   <View style={[s.bubble, isAI ? s.bubbleAI : s.bubbleUser]}>
@@ -153,7 +153,7 @@ export default function ChatScreen() {
           {loading && (
             <View style={[s.msgRow, s.msgRowAI]}>
               <View style={s.aiAvatar}>
-                <Text style={s.aiAvatarText}>🌊</Text>
+                <Text style={s.aiAvatarText}>R</Text>
               </View>
               <View style={[s.bubble, s.bubbleAI, s.bubbleTyping]}>
                 <Text style={s.typingDots}>• • •</Text>
@@ -209,7 +209,7 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.foam },
   flex: { flex: 1 },
 
-  // Header
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -239,7 +239,7 @@ const s = StyleSheet.create({
     color: Colors.teal,
   },
 
-  // Messages
+
   messages: { flex: 1 },
   messagesContent: {
     paddingHorizontal: 16,
@@ -300,7 +300,7 @@ const s = StyleSheet.create({
     letterSpacing: 4,
   },
 
-  // Quick replies
+
   quickReplies: {
     maxHeight: 48,
     borderTopWidth: 1,
@@ -325,7 +325,7 @@ const s = StyleSheet.create({
     color: Colors.textPrimary,
   },
 
-  // Input
+
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'flex-end',

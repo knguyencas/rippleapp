@@ -91,7 +91,7 @@ export default function NewJournalScreen() {
               ])
             }
           >
-            <Text style={[s.headerBtnText, { color: J.deleteRed, fontSize: 18 }]}>🗑</Text>
+            <Text style={[s.headerBtnText, { color: J.deleteRed, fontSize: 18 }]}>X</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -121,7 +121,7 @@ export default function NewJournalScreen() {
             transform: [{ translateY: toastAnim.interpolate({ inputRange: [0,1], outputRange: [20,0] }) }],
           }]}
         >
-          <Text style={s.toastIcon}>✅</Text>
+          <Text style={s.toastIcon}>OK</Text>
           <View>
             <Text style={s.toastTitle}>Đã lưu nhật ký!</Text>
             <Text style={s.toastSub}>Đang quay lại...</Text>

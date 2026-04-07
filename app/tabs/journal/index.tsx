@@ -23,7 +23,7 @@ interface Log {
 
 function getMoodEmoji(moodName: string): string {
   const found = MOODS.find(m => m.name.toLowerCase() === moodName?.toLowerCase());
-  return found?.emoji ?? '💭';
+  return found?.emoji ?? '';
 }
 
 function groupByMonth(logs: Log[]) {
@@ -112,7 +112,7 @@ export default function JournalScreen() {
       >
 
         <View style={s.illustWrap}>
-          {/* TODO: chèn <Image source={require('...')} style={s.illustImg} /> vào đây */}
+
           <View style={s.illustPlaceholder} />
           <Text style={s.pageTitle}>Journal</Text>
         </View>
@@ -147,17 +147,17 @@ export default function JournalScreen() {
 
         {logs.length === 0 ? (
           <View style={s.empty}>
-            <Text style={s.emptyIcon}>📖</Text>
+            <Text style={s.emptyIcon}></Text>
             <Text style={s.emptyTitle}>Chưa có nhật ký nào</Text>
             <Text style={s.emptyText}>Hãy ghi lại cảm xúc đầu tiên của bạn!</Text>
           </View>
         ) : (
           grouped.map(({ key, label, logs: monthLogs }) => (
             <View key={key} style={s.monthSection}>
-              {/* Month header */}
+
               <Text style={s.monthTitle}>{label}</Text>
 
-              {/* Entries */}
+
               {monthLogs.map((log, idx) => {
                 const date    = new Date(log.createdAt);
                 const isToday = new Date().toDateString() === date.toDateString();
@@ -174,7 +174,7 @@ export default function JournalScreen() {
                     onPress={() => router.push(`/tabs/journal/${log.id}`)}
                     activeOpacity={0.7}
                   >
-                    {/* Date column */}
+
                     <View style={s.dateCol}>
                       <Text style={s.dateWeekday}>{weekday}</Text>
                       <Text style={s.dateDay}>{day}</Text>
@@ -328,7 +328,7 @@ const s = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  // Empty state
+
   empty: {
     alignItems: 'center',
     paddingTop: 60,

@@ -48,7 +48,7 @@ export default function SplashScreen() {
           { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }
         ]}
       >
-        <Text style={styles.emoji}>🌊</Text>
+
         <Text style={styles.title}>Ripple</Text>
         <Text style={styles.subtitle}>Your emotional ocean</Text>
       </Animated.View>
@@ -96,10 +96,7 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
   },
-  emoji: {
-    fontSize: 72,
-    marginBottom: Spacing.md,
-  },
+
   title: {
     ...Typography.h1,
     fontSize: 42,

@@ -9,9 +9,9 @@ interface Props {
 
 export default function StatsRow({ streak, avgMood, totalDays }: Props) {
   const stats = [
-    { emoji: '🔥', num: String(streak),    label: 'Ngày streak' },
-    { emoji: '📊', num: String(avgMood),   label: 'Mood TB tuần' },
-    { emoji: '📝', num: String(totalDays), label: 'Ngày đã log' },
+    { emoji: '', num: String(streak),    label: 'Ngày streak' },
+    { emoji: '', num: String(avgMood),   label: 'Mood TB tuần' },
+    { emoji: '', num: String(totalDays), label: 'Ngày đã log' },
   ];
   return (
     <View style={s.row}>

@@ -29,7 +29,7 @@ export function useHealthConnect() {
         const granted = await HC.requestPermission(READ_PERMISSIONS);
         if (granted?.length > 0) setAuthorized(true);
       } catch {
-        // Health Connect not installed or not supported
+
       }
     })();
   }, []);

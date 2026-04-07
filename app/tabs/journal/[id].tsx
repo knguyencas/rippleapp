@@ -20,7 +20,7 @@ export default function LogDetailScreen() {
   const [saving,    setSaving]    = useState(false);
   const [isEditing, setIsEditing] = useState(edit === 'true');
 
-  // Form data managed by JournalEntryForm
+
   const [formData, setFormData] = useState<JournalFormData>({
     mood: null, note: '', photos: [], audios: [],
   });
@@ -46,7 +46,7 @@ export default function LogDetailScreen() {
       const res  = await api.get(`/logs/${id}`);
       const data = res.data;
       setLog(data);
-      // Pre-fill form with existing data
+
       setFormData({
         mood:   MOODS.find(m => m.name === data.mood) ?? null,
         note:   data.note ?? '',
@@ -118,7 +118,7 @@ export default function LogDetailScreen() {
   return (
     <SafeAreaView style={s.safe}>
 
-      {/* Header */}
+
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.navigate('/tabs/journal')} style={s.headerBtn}>
           <Text style={s.headerBtnText}>‹</Text>
@@ -128,7 +128,7 @@ export default function LogDetailScreen() {
 
         <View style={s.headerRight}>
           <TouchableOpacity style={s.headerBtn} onPress={handleDelete}>
-            <Text style={[s.headerBtnText, { color: J.deleteRed, fontSize: 18 }]}>🗑</Text>
+            <Text style={[s.headerBtnText, { color: J.deleteRed, fontSize: 18 }]}>X</Text>
           </TouchableOpacity>
 
           {isToday && (
@@ -142,7 +142,7 @@ export default function LogDetailScreen() {
               </TouchableOpacity>
             ) : (
               <TouchableOpacity style={s.editBtn} onPress={() => setIsEditing(true)}>
-                <Text style={s.editBtnText}>✏️</Text>
+                <Text style={s.editBtnText}>E</Text>
               </TouchableOpacity>
             )
           )}
@@ -156,7 +156,7 @@ export default function LogDetailScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {isEditing ? (
-          /* ── Edit mode: full JournalEntryForm ── */
+
           <JournalEntryForm
             initialMood={formData.mood}
             initialNote={formData.note}
@@ -165,12 +165,12 @@ export default function LogDetailScreen() {
             onChange={setFormData}
           />
         ) : (
-          /* ── View mode ── */
+
           <>
-            {/* Mood */}
+
             <View style={[s.card, formData.mood && { backgroundColor: formData.mood.color + '33' }]}>
               <View style={s.moodRow}>
-                <Text style={s.moodEmoji}>{formData.mood?.emoji ?? '💭'}</Text>
+                <Text style={s.moodEmoji}>{formData.mood?.emoji ?? ''}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={s.moodName}>{formData.mood?.name ?? log.mood ?? 'Chưa có tâm trạng'}</Text>
                   <Text style={s.moodDesc}>{formData.mood?.desc ?? ''}</Text>
@@ -178,7 +178,7 @@ export default function LogDetailScreen() {
               </View>
             </View>
 
-            {/* Note */}
+
             <View style={s.card}>
               <Text style={s.cardTitle}>Nhật ký</Text>
               {formData.note ? (
@@ -188,37 +188,37 @@ export default function LogDetailScreen() {
               )}
             </View>
 
-            {/* Photos */}
+
             {formData.photos.length > 0 && (
               <View style={s.card}>
                 <Text style={s.cardTitle}>Ảnh của bạn</Text>
                 <View style={s.photosGrid}>
-                  {formData.photos.map((uri, i) => (
+                  {formData.photos.map((photo, i) => (
                     <View key={i} style={s.photoWrap}>
-                      <Image source={{ uri }} style={s.photo} />
+                      <Image source={{ uri: photo.uri }} style={s.photo} />
                     </View>
                   ))}
                 </View>
               </View>
             )}
 
-            {/* Audios */}
+
             {formData.audios.length > 0 && (
               <View style={s.card}>
                 <Text style={s.cardTitle}>Ghi âm</Text>
                 {formData.audios.map((audio, i) => (
                   <View key={i} style={s.audioRow}>
-                    <Text style={s.audioPlayIcon}>🎙</Text>
+                    <Text style={s.audioPlayIcon}>MIC</Text>
                     <Text style={s.audioLabel}>{audio.label}</Text>
                   </View>
                 ))}
               </View>
             )}
 
-            {/* NLP analysis (if available) */}
+
             {log.nlpEmotion && (
               <View style={[s.card, s.nlpCard]}>
-                <Text style={s.cardTitle}>🧠 AI phân tích cảm xúc</Text>
+                <Text style={s.cardTitle}>AI phân tích cảm xúc</Text>
                 <View style={s.nlpRow}>
                   <Text style={s.nlpLabel}>Cảm xúc</Text>
                   <Text style={s.nlpValue}>{log.nlpEmotion}</Text>
@@ -243,7 +243,7 @@ export default function LogDetailScreen() {
         <View style={{ height: 48 }} />
       </ScrollView>
 
-      {/* Toast */}
+
       {toastVisible && (
         <Animated.View
           style={[s.toast, {
@@ -251,7 +251,7 @@ export default function LogDetailScreen() {
             transform: [{ translateY: toastAnim.interpolate({ inputRange: [0,1], outputRange: [20,0] }) }],
           }]}
         >
-          <Text style={s.toastIcon}>✅</Text>
+          <Text style={s.toastIcon}>OK</Text>
           <View>
             <Text style={s.toastTitle}>Đã lưu thay đổi!</Text>
             <Text style={s.toastSub}>Đang quay lại...</Text>
@@ -293,7 +293,7 @@ const s = StyleSheet.create({
 
   scrollContent: { paddingHorizontal: 16, paddingTop: 4, gap: 14 },
 
-  // View mode cards
+
   card: {
     backgroundColor: J.card, borderRadius: 20, padding: 18, ...cardShadow,
   },

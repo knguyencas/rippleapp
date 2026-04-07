@@ -231,7 +231,7 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
           <Text style={s.hint}>← Kéo để chọn tâm trạng →</Text>
 
           <TouchableOpacity style={s.confirmBtn} onPress={handleConfirm}>
-            <Text style={s.confirmBtnText}>Xác nhận 👍</Text>
+            <Text style={s.confirmBtnText}>Xác nhận</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={s.skipBtn} onPress={handleClose}>

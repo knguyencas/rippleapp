@@ -8,36 +8,36 @@ const SECTION_ITEMS = [
   {
     title: 'Tài khoản',
     items: [
-      { icon: '👤', label: 'Chỉnh sửa hồ sơ',    arrow: true },
-      { icon: '🔒', label: 'Bảo mật & Mật khẩu',  arrow: true },
-      { icon: '🔔', label: 'Thông báo',             arrow: true },
+      { icon: '', label: 'Chỉnh sửa hồ sơ',    arrow: true },
+      { icon: '', label: 'Bảo mật & Mật khẩu',  arrow: true },
+      { icon: '', label: 'Thông báo',             arrow: true },
     ],
   },
   {
     title: 'Cài đặt',
     items: [
-      { icon: '🌐', label: 'Ngôn ngữ',                    arrow: true },
-      { icon: '🎨', label: 'Giao diện',                   arrow: true },
+      { icon: '', label: 'Ngôn ngữ',                    arrow: true },
+      { icon: '', label: 'Giao diện',                   arrow: true },
     ],
   },
   {
     title: 'Hỗ trợ',
     items: [
-      { icon: '❓', label: 'Trợ giúp & FAQ',               arrow: true },
-      { icon: '💬', label: 'Gửi phản hồi',                 arrow: true },
-      { icon: '📋', label: 'Điều khoản & Quyền riêng tư', arrow: true },
+      { icon: '', label: 'Trợ giúp & FAQ',               arrow: true },
+      { icon: '', label: 'Gửi phản hồi',                 arrow: true },
+      { icon: '', label: 'Điều khoản & Quyền riêng tư', arrow: true },
     ],
   },
 ];
 
 export default function ProfileScreen() {
-  const { user, clearAuth } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   const displayName = user?.displayName || user?.username || 'Người dùng';
   const initials = displayName.slice(0, 2).toUpperCase();
 
   const handleLogout = () => {
-    clearAuth();
+    logout();
     router.replace('/auth/login');
   };
 
@@ -65,10 +65,10 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Streak card */}
+
         <View style={s.streakCard}>
           <View style={s.streakLeft}>
-            <Text style={s.streakFire}>🔥</Text>
+            <Text style={s.streakFire}></Text>
             <View>
               <Text style={s.streakNum}>7 ngày</Text>
               <Text style={s.streakLabel}>Streak hiện tại</Text>
@@ -88,7 +88,7 @@ export default function ProfileScreen() {
 
         <View style={s.reminderCard}>
           <View style={s.reminderLeft}>
-            <Text style={s.reminderIcon}>⏰</Text>
+            <Text style={s.reminderIcon}></Text>
             <View>
               <Text style={s.reminderLabel}>Nhắc nhở hàng ngày</Text>
               <Text style={s.reminderSub}>Nhắc bạn ghi journal mỗi ngày</Text>
@@ -123,15 +123,15 @@ export default function ProfileScreen() {
           </View>
         ))}
 
-        {/* Logout */}
+
         <View style={s.section}>
           <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-            <Text style={s.logoutIcon}>🚪</Text>
+            <Text style={s.logoutIcon}></Text>
             <Text style={s.logoutText}>Đăng xuất</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={s.version}>Ripple v1.0.0 • Made with 💙</Text>
+        <Text style={s.version}>Ripple v1.0.0</Text>
         <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>

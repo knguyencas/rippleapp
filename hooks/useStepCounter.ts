@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { healthApi } from '../services/health';
 
-// Pedometer only works on native (iOS/Android), not web
+
 let Pedometer: any = null;
 if (Platform.OS !== 'web') {
   Pedometer = require('expo-sensors').Pedometer;
@@ -31,7 +31,7 @@ export function useStepCounter() {
       await healthApi.saveSteps(dateStr, currentSteps);
       lastSavedSteps.current = currentSteps;
     } catch {
-      // silent fail — will retry next interval
+
     }
   };
 
@@ -44,17 +44,17 @@ export function useStepCounter() {
     let subscription: any = null;
 
     (async () => {
-      // Check availability
+
       const isAvail = await Pedometer.isAvailableAsync();
       setAvailable(isAvail);
       if (!isAvail) return;
 
-      // Request permission
+
       const { status } = await Pedometer.requestPermissionsAsync();
       setPermission(status === 'granted' ? 'granted' : 'denied');
       if (status !== 'granted') return;
 
-      // Get steps so far today (snapshot)
+
       try {
         const result = await Pedometer.getStepCountAsync(todayStart(), new Date());
         if (result?.steps != null) {
@@ -62,10 +62,10 @@ export function useStepCounter() {
           saveToBackend(result.steps);
         }
       } catch {
-        // some devices don't support historical query
+
       }
 
-      // Live subscription for new steps
+
       subscription = Pedometer.watchStepCount((result: { steps: number }) => {
         setSteps(prev => {
           const newSteps = (prev ?? 0) + result.steps;
@@ -73,7 +73,7 @@ export function useStepCounter() {
         });
       });
 
-      // Periodically save to backend
+
       saveTimer.current = setInterval(async () => {
         try {
           const result = await Pedometer.getStepCountAsync(todayStart(), new Date());

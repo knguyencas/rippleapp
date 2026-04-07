@@ -2,11 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   Image, StyleSheet, Alert, Animated, Platform,
-  Dimensions, ScrollView,
+  Dimensions, ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import MoodWheel, { MOODS } from '../mood/MoodWheel';
+import api from '../../services/api';
+import { useAuthStore } from '../../stores/auth.store';
 
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 48 - 12) / 3;
@@ -29,70 +31,95 @@ export const cardShadow: any = Platform.OS === 'web'
   : { shadowColor: '#2C3E2D', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 };
 
 export interface AudioItem {
-  uri: string;
-  label: string; // "Ghi âm 1", "Ghi âm 2", ...
+  id?:   string;
+  uri:   string;
+  label: string;
+}
+
+export interface PhotoItem {
+  id?:      string;
+  uri:      string;
+  uploaded: boolean;
 }
 
 export interface JournalFormData {
   mood:   typeof MOODS[0] | null;
   note:   string;
-  photos: string[];
+  photos: PhotoItem[];
   audios: AudioItem[];
 }
 
 interface Props {
+  logId?:         string;
   initialMood?:   typeof MOODS[0] | null;
   initialNote?:   string;
-  initialPhotos?: string[];
+  initialPhotos?: PhotoItem[];
   initialAudios?: AudioItem[];
-  onChange?: (data: JournalFormData) => void;
+  onChange?:      (data: JournalFormData) => void;
+}
+
+async function uploadFileToLog(
+  logId: string,
+  uri: string,
+  type: 'photo' | 'audio',
+  token: string,
+): Promise<{ id: string; url: string; label?: string } | null> {
+  try {
+    const filename  = uri.split('/').pop() ?? `file.${type === 'photo' ? 'jpg' : 'm4a'}`;
+    const mimeTypes: Record<string, string> = {
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+      webp: 'image/webp', heic: 'image/heic',
+      m4a: 'audio/m4a', mp3: 'audio/mpeg', wav: 'audio/wav',
+      aac: 'audio/aac', caf: 'audio/x-caf',
+    };
+    const ext  = filename.split('.').pop()?.toLowerCase() ?? '';
+    const mime = mimeTypes[ext] ?? (type === 'photo' ? 'image/jpeg' : 'audio/m4a');
+
+    const form = new FormData();
+    form.append(type, { uri, name: filename, type: mime } as any);
+
+    const res = await api.post(`/logs/${logId}/${type}`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  } catch {
+    return null;
+  }
 }
 
 export default function JournalEntryForm({
+  logId,
   initialMood   = null,
   initialNote   = '',
   initialPhotos = [],
   initialAudios = [],
   onChange,
 }: Props) {
+  const { token } = useAuthStore();
+
   const [showWheel,    setShowWheel]    = useState(false);
   const [selectedMood, setSelectedMood] = useState<typeof MOODS[0] | null>(initialMood);
   const [note,         setNote]         = useState(initialNote);
-  const [photos,       setPhotos]       = useState<string[]>(initialPhotos);
+  const [photos,       setPhotos]       = useState<PhotoItem[]>(initialPhotos);
   const [audios,       setAudios]       = useState<AudioItem[]>(initialAudios);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  // Recording state
   const [recording,   setRecording]   = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const recordAnim = useRef(new Animated.Value(1)).current;
 
-  // Playback state: which audio is currently playing
   const [playingIdx, setPlayingIdx] = useState<number | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
 
-  // Sync initialMood when parent loads data (edit mode)
-  useEffect(() => {
-    if (initialMood) setSelectedMood(initialMood);
-  }, [initialMood?.name]);
+  useEffect(() => { if (initialMood)            setSelectedMood(initialMood);     }, [initialMood?.name]);
+  useEffect(() => { if (initialNote)            setNote(initialNote);             }, [initialNote]);
+  useEffect(() => { if (initialPhotos.length)   setPhotos(initialPhotos);         }, [initialPhotos.length]);
+  useEffect(() => { if (initialAudios.length)   setAudios(initialAudios);         }, [initialAudios.length]);
 
-  useEffect(() => {
-    if (initialNote) setNote(initialNote);
-  }, [initialNote]);
-
-  useEffect(() => {
-    if (initialPhotos.length) setPhotos(initialPhotos);
-  }, [initialPhotos.length]);
-
-  useEffect(() => {
-    if (initialAudios.length) setAudios(initialAudios);
-  }, [initialAudios.length]);
-
-  // Notify parent of any change
   useEffect(() => {
     onChange?.({ mood: selectedMood, note, photos, audios });
   }, [selectedMood, note, photos, audios]);
 
-  // Recording pulse animation
   useEffect(() => {
     if (isRecording) {
       Animated.loop(
@@ -107,14 +134,9 @@ export default function JournalEntryForm({
     }
   }, [isRecording]);
 
-  // Cleanup sound on unmount
   useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync();
-    };
+    return () => { soundRef.current?.unloadAsync(); };
   }, []);
-
-  /* ─── Actions ─── */
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -127,14 +149,38 @@ export default function JournalEntryForm({
       allowsMultipleSelection: true,
       quality: 0.8,
     });
-    if (!result.canceled) {
-      const uris = result.assets.map(a => a.uri);
-      setPhotos(prev => [...prev, ...uris].slice(0, 9));
+    if (result.canceled) return;
+
+    const newUris = result.assets.map(a => a.uri);
+    const slots   = (9 - photos.length);
+    const picked  = newUris.slice(0, slots);
+
+    if (logId && token) {
+      setUploadingPhoto(true);
+      const uploaded: PhotoItem[] = [];
+      for (const uri of picked) {
+        const res = await uploadFileToLog(logId, uri, 'photo', token);
+        uploaded.push(res
+          ? { id: res.id, uri: res.url, uploaded: true }
+          : { uri, uploaded: false }
+        );
+      }
+      setPhotos(prev => [...prev, ...uploaded]);
+      setUploadingPhoto(false);
+    } else {
+      setPhotos(prev => [...prev, ...picked.map(uri => ({ uri, uploaded: false }))]);
     }
   };
 
-  const removePhoto = (idx: number) =>
+  const removePhoto = async (idx: number) => {
+    const photo = photos[idx];
+    if (photo.id && logId) {
+      try {
+        await api.delete(`/logs/${logId}/photo/${photo.id}`);
+      } catch {}
+    }
     setPhotos(prev => prev.filter((_, i) => i !== idx));
+  };
 
   const startRecording = async () => {
     try {
@@ -143,16 +189,13 @@ export default function JournalEntryForm({
         Alert.alert('Cần quyền microphone', 'Vui lòng cấp quyền truy cập microphone.');
         return;
       }
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
       const { recording: newRec } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       setRecording(newRec);
       setIsRecording(true);
-    } catch (e) {
+    } catch {
       Alert.alert('Lỗi', 'Không thể bắt đầu thu âm.');
     }
   };
@@ -162,10 +205,16 @@ export default function JournalEntryForm({
     try {
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
-      if (uri) {
-        const label = `Ghi âm ${audios.length + 1}`;
-        setAudios(prev => [...prev, { uri, label }]);
+      if (!uri) return;
+
+      if (logId && token) {
+        const res = await uploadFileToLog(logId, uri, 'audio', token);
+        if (res) {
+          setAudios(prev => [...prev, { id: res.id, uri: res.url, label: res.label ?? `Ghi âm ${prev.length + 1}` }]);
+          return;
+        }
       }
+      setAudios(prev => [...prev, { uri, label: `Ghi âm ${prev.length + 1}` }]);
     } catch (e) {
       console.error('Stop recording error:', e);
     } finally {
@@ -174,15 +223,17 @@ export default function JournalEntryForm({
     }
   };
 
-  const removeAudio = (idx: number) => {
-    // Stop if playing this one
+  const removeAudio = async (idx: number) => {
+    const audio = audios[idx];
     if (playingIdx === idx) {
-      soundRef.current?.stopAsync();
+      await soundRef.current?.stopAsync();
       setPlayingIdx(null);
+    }
+    if (audio.id && logId) {
+      try { await api.delete(`/logs/${logId}/audio/${audio.id}`); } catch {}
     }
     setAudios(prev => {
       const next = prev.filter((_, i) => i !== idx);
-      // Re-label remaining
       return next.map((a, i) => ({ ...a, label: `Ghi âm ${i + 1}` }));
     });
   };
@@ -195,26 +246,19 @@ export default function JournalEntryForm({
       setPlayingIdx(null);
       return;
     }
-
     if (soundRef.current) {
       await soundRef.current.stopAsync();
       await soundRef.current.unloadAsync();
       soundRef.current = null;
     }
-
     try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-      });
-
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true });
       const { sound } = await Audio.Sound.createAsync(
         { uri: audios[idx].uri },
         { shouldPlay: true }
       );
       soundRef.current = sound;
       setPlayingIdx(idx);
-
       sound.setOnPlaybackStatusUpdate(status => {
         if (status.isLoaded && status.didJustFinish) {
           setPlayingIdx(null);
@@ -228,12 +272,9 @@ export default function JournalEntryForm({
     }
   };
 
-  /* ─── Render ─── */
-
   return (
     <View style={{ gap: 14 }}>
 
-      {/* Mood card */}
       <TouchableOpacity
         style={[s.card, s.moodCard, selectedMood && { backgroundColor: selectedMood.color + '22' }]}
         onPress={() => setShowWheel(true)}
@@ -250,7 +291,7 @@ export default function JournalEntryForm({
           </View>
         ) : (
           <View style={s.moodRow}>
-            <Text style={s.moodEmoji}>🎡</Text>
+            <Text style={s.moodEmoji}></Text>
             <View style={{ flex: 1 }}>
               <Text style={s.moodName}>Tâm trạng hôm nay</Text>
               <Text style={s.moodDesc}>Nhấn để chọn qua mood wheel</Text>
@@ -260,7 +301,6 @@ export default function JournalEntryForm({
         )}
       </TouchableOpacity>
 
-      {/* Note */}
       <View style={s.card}>
         <Text style={s.cardTitle}>Viết về ngày hôm nay</Text>
         <TextInput
@@ -277,40 +317,40 @@ export default function JournalEntryForm({
         )}
       </View>
 
-      {/* Photos */}
       <View style={s.card}>
         <Text style={s.cardTitle}>Ảnh của bạn</Text>
         <View style={s.photosGrid}>
-          {photos.map((uri, i) => (
+          {photos.map((photo, i) => (
             <View key={i} style={s.photoWrap}>
-              <Image source={{ uri }} style={s.photo} />
+              <Image source={{ uri: photo.uri }} style={s.photo} />
               <TouchableOpacity style={s.photoRemove} onPress={() => removePhoto(i)}>
                 <Text style={s.photoRemoveText}>×</Text>
               </TouchableOpacity>
             </View>
           ))}
           {photos.length < 9 && (
-            <TouchableOpacity style={s.photoAdd} onPress={pickImage}>
-              <Text style={s.photoAddIcon}>🖼</Text>
-              <Text style={s.photoAddLabel}>Thêm ảnh</Text>
+            <TouchableOpacity style={s.photoAdd} onPress={pickImage} disabled={uploadingPhoto}>
+              {uploadingPhoto
+                ? <ActivityIndicator color={J.accent} />
+                : <>
+                    <Text style={s.photoAddIcon}>+</Text>
+                    <Text style={s.photoAddLabel}>Thêm ảnh</Text>
+                  </>
+              }
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* Voice recordings */}
       <View style={s.card}>
         <Text style={s.cardTitle}>Ghi âm</Text>
 
-        {/* Existing recordings list */}
         {audios.length > 0 && (
           <View style={s.audioList}>
             {audios.map((audio, i) => (
               <View key={i} style={s.audioRow}>
                 <TouchableOpacity style={s.audioPlayBtn} onPress={() => togglePlay(i)}>
-                  <Text style={s.audioPlayIcon}>
-                    {playingIdx === i ? '⏹' : '▶'}
-                  </Text>
+                  <Text style={s.audioPlayIcon}>{playingIdx === i ? '⏹' : '▶'}</Text>
                 </TouchableOpacity>
                 <Text style={s.audioLabel}>{audio.label}</Text>
                 <TouchableOpacity style={s.audioDeleteBtn} onPress={() => removeAudio(i)}>
@@ -321,7 +361,6 @@ export default function JournalEntryForm({
           </View>
         )}
 
-        {/* Record button */}
         <View style={s.voiceWrap}>
           <Animated.View style={{ transform: [{ scale: recordAnim }] }}>
             <TouchableOpacity
@@ -329,7 +368,7 @@ export default function JournalEntryForm({
               onPress={isRecording ? stopRecording : startRecording}
               activeOpacity={0.85}
             >
-              <Text style={s.micIcon}>🎙</Text>
+              <Text style={s.micIcon}>MIC</Text>
             </TouchableOpacity>
           </Animated.View>
           <Text style={s.voiceHint}>
@@ -342,7 +381,6 @@ export default function JournalEntryForm({
         </View>
       </View>
 
-      {/* MoodWheel overlay */}
       {showWheel && (
         <MoodWheel
           onConfirm={mood => { setSelectedMood(mood); setShowWheel(false); }}
@@ -354,20 +392,9 @@ export default function JournalEntryForm({
 }
 
 const s = StyleSheet.create({
-  card: {
-    backgroundColor: J.card,
-    borderRadius: 20,
-    padding: 18,
-    ...cardShadow,
-  },
-  cardTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 15,
-    color: J.textPrimary,
-    marginBottom: 12,
-  },
+  card:      { backgroundColor: J.card, borderRadius: 20, padding: 18, ...cardShadow },
+  cardTitle: { fontFamily: 'Nunito_700Bold', fontSize: 15, color: J.textPrimary, marginBottom: 12 },
 
-  // Mood
   moodCard:   { paddingVertical: 14 },
   moodRow:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
   moodEmoji:  { fontSize: 36 },
@@ -376,23 +403,15 @@ const s = StyleSheet.create({
   moodChange: { fontFamily: 'Nunito_600SemiBold', fontSize: 13, color: J.accent },
   moodChevron:{ fontSize: 22, color: J.placeholder },
 
-  // Note
   textInput: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 14,
-    color: J.textPrimary,
-    minHeight: 120,
-    lineHeight: 22,
+    fontFamily: 'Nunito_400Regular', fontSize: 14, color: J.textPrimary,
+    minHeight: 120, lineHeight: 22,
   },
   charCount: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 11,
-    color: J.placeholder,
-    textAlign: 'right',
-    marginTop: 6,
+    fontFamily: 'Nunito_400Regular', fontSize: 11,
+    color: J.placeholder, textAlign: 'right', marginTop: 6,
   },
 
-  // Photos
   photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   photoWrap:  { width: PHOTO_SIZE, height: PHOTO_SIZE, borderRadius: 12, overflow: 'hidden' },
   photo:      { width: '100%', height: '100%' },
@@ -404,68 +423,37 @@ const s = StyleSheet.create({
   },
   photoRemoveText: { color: '#fff', fontSize: 14, lineHeight: 20 },
   photoAdd: {
-    width: PHOTO_SIZE, height: PHOTO_SIZE,
-    borderRadius: 12,
-    backgroundColor: J.bg,
-    borderWidth: 1.5,
-    borderColor: J.border,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+    width: PHOTO_SIZE, height: PHOTO_SIZE, borderRadius: 12,
+    backgroundColor: J.bg, borderWidth: 1.5, borderColor: J.border,
+    borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4,
   },
   photoAddIcon:  { fontSize: 22 },
   photoAddLabel: { fontFamily: 'Nunito_400Regular', fontSize: 10, color: J.textMuted },
 
-  // Audio list
   audioList: { gap: 8, marginBottom: 14 },
   audioRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0F7E8',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    gap: 10,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F0F7E8', borderRadius: 12,
+    paddingVertical: 10, paddingHorizontal: 12, gap: 10,
   },
   audioPlayBtn: {
-    width: 32, height: 32,
-    borderRadius: 16,
-    backgroundColor: J.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: J.accent, alignItems: 'center', justifyContent: 'center',
   },
   audioPlayIcon: { color: '#fff', fontSize: 12 },
-  audioLabel: {
-    flex: 1,
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 13,
-    color: J.textPrimary,
-  },
+  audioLabel:    { flex: 1, fontFamily: 'Nunito_600SemiBold', fontSize: 13, color: J.textPrimary },
   audioDeleteBtn: {
-    width: 28, height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FADBD8',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: '#FADBD8', alignItems: 'center', justifyContent: 'center',
   },
   audioDeleteIcon: { color: J.deleteRed, fontSize: 18, lineHeight: 22 },
 
-  // Voice record
   voiceWrap: { alignItems: 'center', paddingTop: 4, gap: 10 },
   micBtn: {
-    width: 60, height: 60,
-    borderRadius: 30,
-    backgroundColor: J.micBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...cardShadow,
+    width: 60, height: 60, borderRadius: 30,
+    backgroundColor: J.micBg, alignItems: 'center', justifyContent: 'center', ...cardShadow,
   },
   micBtnActive: { backgroundColor: J.micActive },
-  micIcon:  { fontSize: 26 },
-  voiceHint: {
-    fontFamily: 'Nunito_400Regular',
-    fontSize: 13,
-    color: J.textMuted,
-  },
+  micIcon:      { fontSize: 26 },
+  voiceHint: { fontFamily: 'Nunito_400Regular', fontSize: 13, color: J.textMuted },
 });
