@@ -1,17 +1,14 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity,
-  Image, Alert, Animated, Platform,
-  Dimensions, ActivityIndicator,
+  Image, Alert, Animated,
+  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import MoodWheel, { MOODS } from '../mood/MoodWheel';
-import api from '../../services/api';
-import { useAuthStore } from '../../stores/auth.store';
-import { journalFormStyles as s, J, journalCardShadow as cardShadow } from '../../styles/journal.styles';
-
-const { width } = Dimensions.get('window');
-const PHOTO_SIZE = (width - 48 - 12) / 3;
+import api from '../../services/core/api';
+import { journalFormStyles as s, J } from '../../styles/journal/journal.styles';
+import { uploadLogMedia } from '../../services/journal/log-media.service';
 
 export interface AudioItem {
   id?:   string;
@@ -41,35 +38,6 @@ interface Props {
   onChange?:      (data: JournalFormData) => void;
 }
 
-async function uploadFileToLog(
-  logId: string,
-  uri: string,
-  type: 'photo' | 'audio',
-  token: string,
-): Promise<{ id: string; url: string; label?: string } | null> {
-  try {
-    const filename  = uri.split('/').pop() ?? `file.${type === 'photo' ? 'jpg' : 'm4a'}`;
-    const mimeTypes: Record<string, string> = {
-      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
-      webp: 'image/webp', heic: 'image/heic',
-      m4a: 'audio/m4a', mp3: 'audio/mpeg', wav: 'audio/wav',
-      aac: 'audio/aac', caf: 'audio/x-caf',
-    };
-    const ext  = filename.split('.').pop()?.toLowerCase() ?? '';
-    const mime = mimeTypes[ext] ?? (type === 'photo' ? 'image/jpeg' : 'audio/m4a');
-
-    const form = new FormData();
-    form.append(type, { uri, name: filename, type: mime } as any);
-
-    const res = await api.post(`/logs/${logId}/${type}`, form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return res.data;
-  } catch {
-    return null;
-  }
-}
-
 export default function JournalEntryForm({
   logId,
   initialMood   = null,
@@ -78,8 +46,6 @@ export default function JournalEntryForm({
   initialAudios = [],
   onChange,
 }: Props) {
-  const { token } = useAuthStore();
-
   const [showWheel,    setShowWheel]    = useState(false);
   const [selectedMood, setSelectedMood] = useState<typeof MOODS[0] | null>(initialMood);
   const [note,         setNote]         = useState(initialNote);
@@ -90,6 +56,7 @@ export default function JournalEntryForm({
   const [recording,   setRecording]   = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const recordAnim = useRef(new Animated.Value(1)).current;
+  const recordPulseStyle = useMemo(() => ({ transform: [{ scale: recordAnim }] }), [recordAnim]);
 
   const [playingIdx, setPlayingIdx] = useState<number | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -138,11 +105,11 @@ export default function JournalEntryForm({
     const slots   = (9 - photos.length);
     const picked  = newUris.slice(0, slots);
 
-    if (logId && token) {
+    if (logId) {
       setUploadingPhoto(true);
       const uploaded: PhotoItem[] = [];
       for (const uri of picked) {
-        const res = await uploadFileToLog(logId, uri, 'photo', token);
+        const res = await uploadLogMedia(logId, uri, 'photo');
         uploaded.push(res
           ? { id: res.id, uri: res.url, uploaded: true }
           : { uri, uploaded: false }
@@ -190,8 +157,8 @@ export default function JournalEntryForm({
       const uri = recording.getURI();
       if (!uri) return;
 
-      if (logId && token) {
-        const res = await uploadFileToLog(logId, uri, 'audio', token);
+      if (logId) {
+        const res = await uploadLogMedia(logId, uri, 'audio');
         if (res) {
           setAudios(prev => [...prev, { id: res.id, uri: res.url, label: res.label ?? `Ghi âm ${prev.length + 1}` }]);
           return;
@@ -256,7 +223,7 @@ export default function JournalEntryForm({
   };
 
   return (
-    <View style={{ gap: 14 }}>
+    <View style={s.container}>
 
       <TouchableOpacity
         style={[s.card, s.moodCard, selectedMood && { backgroundColor: selectedMood.color + '22' }]}
@@ -266,7 +233,7 @@ export default function JournalEntryForm({
         {selectedMood ? (
           <View style={s.moodRow}>
             <Text style={s.moodEmoji}>{selectedMood.emoji}</Text>
-            <View style={{ flex: 1 }}>
+            <View style={s.moodTextWrap}>
               <Text style={s.moodName}>{selectedMood.name}</Text>
               <Text style={s.moodDesc}>{selectedMood.desc}</Text>
             </View>
@@ -275,7 +242,7 @@ export default function JournalEntryForm({
         ) : (
           <View style={s.moodRow}>
             <Text style={s.moodEmoji}></Text>
-            <View style={{ flex: 1 }}>
+            <View style={s.moodTextWrap}>
               <Text style={s.moodName}>Tâm trạng hôm nay</Text>
               <Text style={s.moodDesc}>Nhấn để chọn qua mood wheel</Text>
             </View>
@@ -345,7 +312,7 @@ export default function JournalEntryForm({
         )}
 
         <View style={s.voiceWrap}>
-          <Animated.View style={{ transform: [{ scale: recordAnim }] }}>
+          <Animated.View style={recordPulseStyle}>
             <TouchableOpacity
               style={[s.micBtn, isRecording && s.micBtnActive]}
               onPress={isRecording ? stopRecording : startRecording}
