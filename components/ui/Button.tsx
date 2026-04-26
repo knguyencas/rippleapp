@@ -1,5 +1,5 @@
 import { TouchableOpacity, Text } from 'react-native';
-import { commonStyles as styles } from '../../styles/common.styles';
+import { commonStyles as styles } from '../../styles/shared/common.styles';
 
 interface Props {
   title: string;
