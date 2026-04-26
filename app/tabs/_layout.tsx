@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { View, Text } from 'react-native';
 import { Colors } from '../../constants/colors';
-import { tabLayoutStyles as styles } from '../../styles/tab-layout.styles';
+import { tabLayoutStyles as styles } from '../../styles/layout/tab-layout.styles';
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   return (
