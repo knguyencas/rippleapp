@@ -12,6 +12,7 @@ import WaterTracker from '../../../components/tracker/WaterTracker';
 import StepsTracker from '../../../components/tracker/StepsTracker';
 import SleepTracker from '../../../components/tracker/SleepTracker';
 import MoodEncouragement from '../../../components/tracker/MoodEncouragement';
+import MeditationCard from '../../../components/tracker/MeditationCard';
 import { fetchEncouragement, EncouragementPayload } from '../../../services/tracker/encouragement.service';
 import { useAuthStore } from '../../../stores/auth.store';
 import { toDateKey } from '../../../utils/shared/date.utils';
@@ -107,6 +108,7 @@ export default function TrackerScreen() {
             <WaterTracker hint={encouragement?.water ?? null} />
             <StepsTracker hint={encouragement?.steps ?? null} />
             <SleepTracker hint={encouragement?.sleep ?? null} />
+            <MeditationCard />
             <MoodLineChart scoreByDate={scoreByDate} />
             <MoodEncouragement message={encouragement?.mood ?? null} />
           </>
