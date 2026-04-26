@@ -4,11 +4,10 @@ import {
   KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors } from '../../constants/colors';
-import { authStyles as styles } from '../../styles/auth.styles';
+import { authStyles as styles } from '../../styles/auth/auth.styles';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import api from '../../services/api';
+import api from '../../services/core/api';
 import { useAuthStore } from '../../stores/auth.store';
 
 export default function LoginScreen() {
@@ -81,7 +80,7 @@ export default function LoginScreen() {
           >
             <Text style={styles.btnSecondaryText}>
               Chưa có tài khoản?{' '}
-              <Text style={{ color: Colors.teal, fontWeight: '600' }}>Đăng ký</Text>
+              <Text style={styles.btnSecondaryLink}>Đăng ký</Text>
             </Text>
           </TouchableOpacity>
         </View>
