@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  TextInput, KeyboardAvoidingView, Platform
+  TextInput, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../../constants/colors';
@@ -11,6 +11,7 @@ import api from '../../../services/core/api';
 import {
   loadChatHistory,
   saveChatHistory,
+  clearChatHistory,
   ChatMessage as Message,
 } from '../../../services/chat/chat-history.service';
 
@@ -124,10 +125,33 @@ export default function ChatScreen() {
           <View style={s.headerAvatar}>
             <Text style={s.headerAvatarText}>R</Text>
           </View>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={s.headerName}>Ripple AI</Text>
             <Text style={s.headerStatus}>● Luôn sẵn sàng lắng nghe</Text>
           </View>
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert(
+                'Xoá cuộc trò chuyện?',
+                'Toàn bộ lịch sử chat trên thiết bị sẽ bị xoá. Hành động này không thể hoàn tác.',
+                [
+                  { text: 'Huỷ', style: 'cancel' },
+                  {
+                    text: 'Xoá',
+                    style: 'destructive',
+                    onPress: async () => {
+                      await clearChatHistory();
+                      setMessages(INITIAL_MESSAGES);
+                    },
+                  },
+                ]
+              );
+            }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Xoá cuộc trò chuyện"
+          >
+            <Text style={{ fontSize: 13, fontFamily: 'Nunito_600SemiBold', color: Colors.textSecondary, paddingHorizontal: 6 }}>Xoá</Text>
+          </TouchableOpacity>
         </View>
 
         <ScrollView
