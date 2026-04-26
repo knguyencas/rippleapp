@@ -1,20 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Image,
-  StyleSheet, ActivityIndicator, Alert, Animated, Platform,
+  ActivityIndicator, Alert, Animated, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import JournalEntryForm, { JournalFormData, AudioItem } from '../../../components/journal/JournalEntryForm';
 import {
   J,
-  journalCardShadow as cardShadow,
   journalHeaderStyles as h,
   journalToastStyles as t,
   journalDetailStyles as s
-} from '../../../styles/journal.styles';
+} from '../../../styles/journal/journal.styles';
 import { MOODS } from '../../../components/mood/MoodWheel';
-import api from '../../../services/api';
+import api from '../../../services/core/api';
 
 export default function LogDetailScreen() {
   const router = useRouter();
@@ -46,7 +45,7 @@ export default function LogDetailScreen() {
     return () => clearTimeout(timer);
   }, [toastVisible]);
 
-  const fetchLog = async () => {
+  const fetchLog = async (showErrorAlert = true) => {
     try {
       const res  = await api.get(`/logs/${id}`);
       const data = res.data;
@@ -59,14 +58,16 @@ export default function LogDetailScreen() {
         audios: (data.audios ?? []) as AudioItem[],
       });
     } catch {
-      Alert.alert('Lỗi', 'Không tải được nhật ký');
-      router.navigate('/tabs/journal');
+      if (showErrorAlert && loading) {
+        Alert.alert('Lỗi', 'Không tải được nhật ký');
+        router.navigate('/tabs/journal');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<boolean> => {
     setSaving(true);
     try {
       await api.put(`/logs/${id}`, {
@@ -76,10 +77,12 @@ export default function LogDetailScreen() {
         note:      formData.note.trim() || null,
       });
       setIsEditing(false);
-      await fetchLog();
       setToastVisible(true);
+      fetchLog();
+      return true;
     } catch {
       Alert.alert('Lỗi', 'Không lưu được, thử lại nhé!');
+      return false;
     } finally {
       setSaving(false);
     }
@@ -106,10 +109,42 @@ export default function LogDetailScreen() {
     );
   };
 
+  const isDirty = () => {
+    if (!log) return false;
+    const origNote = log.note ?? '';
+    const origMood = log.mood ?? '';
+    return formData.note !== origNote || (formData.mood?.name ?? '') !== origMood;
+  };
+
+  const handleBack = () => {
+    if (isEditing && isDirty()) {
+      Alert.alert(
+        'Lưu thay đổi?',
+        'Bạn đã chỉnh sửa nhật ký. Bạn có muốn lưu lại không?',
+        [
+          { text: 'Tiếp tục sửa', style: 'cancel' },
+          {
+            text: 'Không lưu', style: 'destructive',
+            onPress: () => router.navigate('/tabs/journal'),
+          },
+          {
+            text: 'Lưu',
+            onPress: async () => {
+              const ok = await handleSave();
+              if (!ok) return;
+            },
+          },
+        ]
+      );
+      return;
+    }
+    router.navigate('/tabs/journal');
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={s.safe}>
-        <ActivityIndicator style={{ flex: 1 }} color={J.accent} />
+        <ActivityIndicator style={s.loadingIndicator} color={J.accent} />
       </SafeAreaView>
     );
   }
@@ -125,7 +160,7 @@ export default function LogDetailScreen() {
 
 
       <View style={h.header}>
-        <TouchableOpacity onPress={() => router.navigate('/tabs/journal')} style={h.headerBtn}>
+        <TouchableOpacity onPress={handleBack} style={h.headerBtn}>
           <Text style={h.headerBtnText}>‹</Text>
         </TouchableOpacity>
 
@@ -133,7 +168,7 @@ export default function LogDetailScreen() {
 
         <View style={h.headerRight}>
           <TouchableOpacity style={h.headerBtn} onPress={handleDelete}>
-            <Text style={[h.headerBtnText, { color: J.deleteRed, fontSize: 18 }]}>X</Text>
+            <Text style={[h.headerBtnText, s.deleteIcon]}>🗑</Text>
           </TouchableOpacity>
 
           {isToday && (
@@ -155,7 +190,7 @@ export default function LogDetailScreen() {
       </View>
 
       <ScrollView
-        style={{ flex: 1 }}
+        style={s.scroll}
         contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -176,7 +211,7 @@ export default function LogDetailScreen() {
             <View style={[s.card, formData.mood && { backgroundColor: formData.mood.color + '33' }]}>
               <View style={s.moodRow}>
                 <Text style={s.moodEmoji}>{formData.mood?.emoji ?? ''}</Text>
-                <View style={{ flex: 1 }}>
+                <View style={s.flex1}>
                   <Text style={s.moodName}>{formData.mood?.name ?? log.mood ?? 'Chưa có tâm trạng'}</Text>
                   <Text style={s.moodDesc}>{formData.mood?.desc ?? ''}</Text>
                 </View>
@@ -237,7 +272,7 @@ export default function LogDetailScreen() {
                 {log.alertLevel && (
                   <View style={s.nlpRow}>
                     <Text style={s.nlpLabel}>Mức độ</Text>
-                    <Text style={[s.nlpValue, { color: J.deleteRed }]}>{log.alertLevel}</Text>
+                    <Text style={[s.nlpValue, s.alertValue]}>{log.alertLevel}</Text>
                   </View>
                 )}
               </View>
@@ -245,7 +280,7 @@ export default function LogDetailScreen() {
           </>
         )}
 
-        <View style={{ height: 48 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
 
