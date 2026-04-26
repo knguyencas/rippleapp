@@ -4,11 +4,10 @@ import {
   KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors } from '../../constants/colors';
-import { authStyles as styles } from '../../styles/auth.styles';
+import { authStyles as styles } from '../../styles/auth/auth.styles';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import api from '../../services/api';
+import api from '../../services/core/api';
 import { useAuthStore } from '../../stores/auth.store';
 
 export default function RegisterScreen() {
@@ -41,8 +40,6 @@ export default function RegisterScreen() {
       setLoading(false);
     }
   };
-
-  const ageGroups = ['< 18', '18-22', '23-27', '28-35', '35+'];
 
   return (
     <KeyboardAvoidingView
@@ -101,7 +98,7 @@ export default function RegisterScreen() {
           >
             <Text style={styles.btnSecondaryText}>
               Đã có tài khoản?{' '}
-              <Text style={{ color: Colors.teal, fontWeight: '600' }}>Đăng nhập</Text>
+              <Text style={styles.btnSecondaryLink}>Đăng nhập</Text>
             </Text>
           </TouchableOpacity>
         </View>
