@@ -44,8 +44,7 @@ const SECTION_ITEMS = [
   {
     title: 'Cài đặt',
     items: [
-      { icon: '', label: 'Ngôn ngữ',                    arrow: true },
-      { icon: '', label: 'Giao diện',                   arrow: true },
+      { icon: '', label: 'Ngôn ngữ', arrow: true },
     ],
   },
   {
