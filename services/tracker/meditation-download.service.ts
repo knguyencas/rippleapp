@@ -1,21 +1,5 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-/**
- * Quản lý download audio thiền và lưu local.
- *
- * Strategy:
- *   - File MP3 lưu tại `documentDirectory + 'meditation_audio/<soundId>.mp3'`
- *   - Index lưu danh sách soundId đã download trong AsyncStorage
- *     (nhanh hơn check FS từng file mỗi lần render)
- *
- * Public API:
- *   - getDownloadedSet():        Promise<Set<string>>
- *   - isDownloaded(soundId):     Promise<boolean>
- *   - getLocalUri(soundId):      string  (đường dẫn file dự kiến, không check tồn tại)
- *   - downloadSound(soundId, url, onProgress): Promise<string>
- *   - deleteSound(soundId):      Promise<void>
- */
 
 const AUDIO_DIR = `${FileSystem.documentDirectory}meditation_audio/`;
 const INDEX_KEY = '@ripple_meditation_downloaded';
@@ -42,7 +26,6 @@ async function saveIndex(set: Set<string>): Promise<void> {
   try {
     await AsyncStorage.setItem(INDEX_KEY, JSON.stringify([...set]));
   } catch {
-    // ignore — không critical
   }
 }
 
@@ -51,7 +34,6 @@ export function getLocalUri(soundId: string): string {
 }
 
 export async function getDownloadedSet(): Promise<Set<string>> {
-  // Re-validate: file có thể bị xoá thủ công bên ngoài app, sync index lại
   const indexed = await loadIndex();
   if (indexed.size === 0) return indexed;
 
