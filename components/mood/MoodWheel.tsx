@@ -1,13 +1,23 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, Animated,
-  PanResponder, Dimensions, StyleSheet, Platform,
+  PanResponder, Platform,
   GestureResponderEvent, Modal
 } from 'react-native';
-import { moodWheelStyles as s, wheelStyles as ls } from '../../styles/mood-wheel.styles';
+import {
+  moodWheelStyles as s,
+  wheelStyles as ls,
+  moodWheelElementStyles as es,
+  MOOD_WHEEL_SIZE,
+  MOOD_WHEEL_RADIUS,
+  MOOD_WHEEL_INNER_RADIUS,
+} from '../../styles/mood/mood-wheel.styles';
 import { Colors } from '../../constants/colors';
-
-const { width } = Dimensions.get('window');
+import {
+  buildEmojiPositions,
+  getSnappedDegree,
+  getWheelIndexFromDegree,
+} from '../../utils/mood/mood-wheel.utils';
 
 export const MOODS = [
   { emoji: '😶‍🌫️', name: 'Tê liệt',    desc: 'Mất cảm xúc, không còn cảm nhận', score: 1, color: Colors.moodScale[0] },
@@ -24,20 +34,16 @@ export const MOODS = [
 ];
 
 const N            = MOODS.length;
-const WHEEL_SIZE   = width * 0.88;
-const RADIUS       = WHEEL_SIZE / 2;
-const INNER_R      = WHEEL_SIZE * 0.18;
-const TRACK_R      = (RADIUS * 0.72 + INNER_R) / 2 + INNER_R * 0.3;
-const ITEM_SIZE    = 44;
+const TRACK_R      = (MOOD_WHEEL_RADIUS * 0.72 + MOOD_WHEEL_INNER_RADIUS) / 2 + MOOD_WHEEL_INNER_RADIUS * 0.3;
+const ITEM_SIZE    = 40;
 const DEG_PER_ITEM = 360 / N;
 const INITIAL_IDX  = 5;
-const CLIP_H       = WHEEL_SIZE / 2 + 20;
 
 function makeWheelSVG(size: number): string {
   const cx = size / 2;
   const cy = size / 2;
   const R  = size / 2 - 1;
-  const r  = INNER_R;
+  const r  = MOOD_WHEEL_INNER_RADIUS;
 
   const paths = MOODS.map((mood, i) => {
     const a1  = ((i * DEG_PER_ITEM) - 90) * Math.PI / 180;
@@ -63,7 +69,7 @@ function makeWheelSVG(size: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">${paths.join('')}</svg>`;
 }
 
-const SVG_HTML = makeWheelSVG(WHEEL_SIZE);
+const SVG_HTML = makeWheelSVG(MOOD_WHEEL_SIZE);
 const SVG_URI  = `data:image/svg+xml;utf8,${encodeURIComponent(SVG_HTML)}`;
 
 function WheelBackground() {
@@ -71,7 +77,7 @@ function WheelBackground() {
     const Div = 'div' as any;
     return (
       <Div
-        style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}
+        style={es.wheelBackground}
         dangerouslySetInnerHTML={{ __html: SVG_HTML }}
       />
     );
@@ -80,7 +86,7 @@ function WheelBackground() {
   return (
     <ImgTag
       src={SVG_URI}
-      style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}
+      style={es.wheelBackground}
     />
   );
 }
@@ -117,28 +123,13 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
       outputRange: ['10000deg', '-10000deg'],
     }), []);
 
-  const emojiPositions = useMemo(() =>
-    MOODS.map((_, i) => {
-      const centerDeg = (i + 0.5) * DEG_PER_ITEM;
-      const centerRad = (centerDeg * Math.PI) / 180;
-      return {
-        cx: RADIUS + Math.sin(centerRad) * TRACK_R - ITEM_SIZE / 2,
-        cy: RADIUS - Math.cos(centerRad) * TRACK_R - ITEM_SIZE / 2,
-      };
-    }), []);
-
-  const getIdxFromDeg = (deg: number) => {
-    const normalized = ((-deg) % 360 + 360) % 360;
-    return Math.floor(normalized / DEG_PER_ITEM) % N;
-  };
+  const emojiPositions = useMemo(
+    () => buildEmojiPositions(N, DEG_PER_ITEM, MOOD_WHEEL_RADIUS, TRACK_R, ITEM_SIZE),
+    []
+  );
 
   const snapToIdx = (idx: number) => {
-    const target  = -((idx + 0.5) * DEG_PER_ITEM);
-    const current = currentDeg.current;
-    let diff      = target - (current % 360);
-    if (diff > 180)  diff -= 360;
-    if (diff < -180) diff += 360;
-    const snapped = current + diff;
+    const snapped = getSnappedDegree(currentDeg.current, idx, DEG_PER_ITEM);
     currentDeg.current = snapped;
     Animated.spring(wheelRotation, {
       toValue: snapped, tension: 80, friction: 10, useNativeDriver: Platform.OS !== 'web',
@@ -157,7 +148,7 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
       lastX.current = e.nativeEvent.pageX;
       currentDeg.current += dx * 0.4;
       wheelRotation.setValue(currentDeg.current);
-      setCurrentIdx(getIdxFromDeg(currentDeg.current));
+      setCurrentIdx(getWheelIndexFromDegree(currentDeg.current, DEG_PER_ITEM, N));
     },
     onPanResponderRelease: () => snapToIdx(currentIdx),
   }), [currentIdx]);
@@ -176,7 +167,7 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
     <Modal visible transparent animationType="none" statusBarTranslucent>
       <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={handleClose}>
         <Animated.View style={[s.sheet, { transform: [{ translateY: slideAnim }] }]}>
-          <TouchableOpacity activeOpacity={1} style={{ width: '100%', alignItems: 'center' }}>
+          <TouchableOpacity activeOpacity={1} style={es.sheetBody}>
 
             <View style={s.handle} />
             <Text style={s.moodEmojiBig}>{MOODS[currentIdx].emoji}</Text>
@@ -189,7 +180,7 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
                 <WheelBackground />
 
                 {MOODS.map((mood, i) => {
-                  const { cx, cy } = emojiPositions[i];
+                  const { left, top } = emojiPositions[i];
                   const isActive   = i === currentIdx;
                   const dist       = Math.min(
                     Math.abs(i - currentIdx),
@@ -200,19 +191,22 @@ export default function MoodWheel({ onConfirm, onClose }: Props) {
                   return (
                     <Animated.View
                       key={i}
-                      style={{
-                        position: 'absolute',
-                        left: cx, top: cy,
-                        width: ITEM_SIZE, height: ITEM_SIZE,
-                        alignItems: 'center', justifyContent: 'center',
-                        opacity,
-                        transform: [
-                          { rotate: negRotateDeg },
-                          { scale: isActive ? 1.25 : 0.85 },
-                        ],
-                      }}
+                      style={[
+                        es.emojiItemBase,
+                        {
+                          left,
+                          top,
+                          width: ITEM_SIZE,
+                          height: ITEM_SIZE,
+                          opacity,
+                          transform: [
+                            { rotate: negRotateDeg },
+                            { scale: isActive ? 1.25 : 0.85 },
+                          ],
+                        },
+                      ]}
                     >
-                      <Text style={{ fontSize: isActive ? 28 : 18 }}>
+                      <Text style={[es.emojiText, isActive && es.emojiTextActive]}>
                         {mood.emoji}
                       </Text>
                     </Animated.View>
