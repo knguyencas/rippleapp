@@ -2,11 +2,11 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   Animated, FlatList, NativeScrollEvent,
-  NativeSyntheticEvent
+  NativeSyntheticEvent, Modal
 } from 'react-native';
 import { router } from 'expo-router';
-import { displayNameStyles as s } from '../../styles/display-name.styles';
-import api from '../../services/api';
+import { displayNameStyles as s } from '../../styles/auth/display-name.styles';
+import api from '../../services/core/api';
 import { useAuthStore } from '../../stores/auth.store';
 
 const ITEM_HEIGHT = 56;
@@ -23,12 +23,14 @@ export default function DisplayNameScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [pickerReady, setPickerReady] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [savedName, setSavedName] = useState('');
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const listRef = useRef<FlatList>(null);
   const lastTap = useRef(0);
-  const { user, token } = useAuthStore();
+  const { user, token, updateUser } = useAuthStore();
 
   useEffect(() => {
     if (pickerReady && step === 2) {
@@ -76,16 +78,25 @@ export default function DisplayNameScreen() {
     setLoading(true);
     setError('');
     try {
-      await api.put('/users/me',
-        { displayName: displayName || undefined, ageGroup: finalAge },
+      const res = await api.put('/users/me',
+        { displayName: displayName.trim() || null, ageGroup: finalAge },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      router.replace('/tabs/home');
-    } catch {
-      router.replace('/tabs/home');
+      await updateUser({
+        displayName: res.data?.displayName ?? null,
+        ageGroup: res.data?.ageGroup ?? null,
+      });
+      setSavedName(res.data?.displayName || user?.username || 'bạn');
+      setShowSuccess(true);
+    } catch (e: any) {
+      setError(e?.response?.data?.error || 'Không thể lưu. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSkipAll = () => {
+    router.replace('/tabs/home');
   };
 
   const Dots = () => (
@@ -175,9 +186,9 @@ export default function DisplayNameScreen() {
             ) : (
               <TouchableOpacity activeOpacity={1} onPress={handleTapAge}>
                 <View style={s.pickerWrap}>
-                  <View style={[s.pickerOverlayTop, { pointerEvents: 'none' } as any]} />
-                  <View style={[s.pickerOverlayBottom, { pointerEvents: 'none' } as any]} />
-                  <View style={[s.pickerSelector, { pointerEvents: 'none' } as any]} />
+                  <View style={s.pickerOverlayTop} pointerEvents="none" />
+                  <View style={s.pickerOverlayBottom} pointerEvents="none" />
+                  <View style={s.pickerSelector} pointerEvents="none" />
                   <FlatList
                     ref={listRef}
                     data={AGES}
@@ -193,8 +204,8 @@ export default function DisplayNameScreen() {
                       offset: ITEM_HEIGHT * index,
                       index,
                     })}
-                    ListHeaderComponent={<View style={{ height: ITEM_HEIGHT * 1.5 }} />}
-                    ListFooterComponent={<View style={{ height: ITEM_HEIGHT * 1.5 }} />}
+                    ListHeaderComponent={<View style={s.pickerSpacer} />}
+                    ListFooterComponent={<View style={s.pickerSpacer} />}
                     renderItem={({ item }) => (
                       <View style={s.pickerItem}>
                         <Text style={[
@@ -221,10 +232,39 @@ export default function DisplayNameScreen() {
                 {loading ? 'Đang lưu...' : 'Hoàn tất'}
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={handleSkipAll} style={s.btnSkip} disabled={loading}>
+              <Text style={s.skipText}>Để sau</Text>
+            </TouchableOpacity>
           </View>
         )}
 
       </Animated.View>
+
+      <Modal
+        visible={showSuccess}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Text style={s.modalEmoji}>🎉</Text>
+            <Text style={s.modalTitle}>Đã lưu!</Text>
+            <Text style={s.modalText}>
+              Chào {savedName}, hành trình cảm xúc của bạn bắt đầu từ đây.
+            </Text>
+            <TouchableOpacity
+              style={s.modalBtn}
+              onPress={() => {
+                setShowSuccess(false);
+                router.replace('/tabs/home');
+              }}
+            >
+              <Text style={s.modalBtnText}>Tiếp tục</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
