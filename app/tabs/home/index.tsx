@@ -1,15 +1,12 @@
 import { useCallback, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { homeStyles as s } from '../../../styles/home.styles';
+import { homeStyles as s, homeQuickLogShadow } from '../../../styles/home/home.styles';
 import { useAuthStore } from '../../../stores/auth.store';
 import MoodWheel, { MOODS } from '../../../components/mood/MoodWheel';
-import api from '../../../services/api';
-
-const cardShadow: any = Platform.OS === 'web'
-  ? { boxShadow: '0 2px 8px rgba(26,58,92,0.07)' }
-  : { shadowColor: '#1A3A5C', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 2 };
+import api from '../../../services/core/api';
+import { calculateAverageMood, getMoodInfoByName } from '../../../utils/home/home.utils';
 
 interface TodayLog {
   id: string;
@@ -19,30 +16,20 @@ interface TodayLog {
   createdAt: string;
 }
 
-function getMoodInfo(moodName: string) {
-  return MOODS.find(m => m.name.toLowerCase() === moodName?.toLowerCase()) ?? null;
-}
-
-const HABITS = [
-  { emoji: '', name: 'Uống nước',  sub: 'Mục tiêu 8 ly/ngày' },
-  { emoji: '', name: 'Ngủ đủ giấc', sub: 'Mục tiêu 7-8 tiếng' },
-  { emoji: '', name: 'Vận động',   sub: 'Đi bộ 30 phút' },
-];
-
 export default function HomeScreen() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const streak = useAuthStore((s) => s.streak);
+  const pingStreak = useAuthStore((s) => s.pingStreak);
+
   const [todayLog, setTodayLog]     = useState<TodayLog | null>(null);
   const [loadingLog, setLoadingLog] = useState(true);
-  const [habits, setHabits]         = useState([false, false, false]);
-  const [stats, setStats]           = useState({ streak: 0, avgMood: '—', totalDays: 0 });
+  const [avgMood, setAvgMood]       = useState<string>('-');
+  const [totalLogs, setTotalLogs]   = useState<number>(0);
   const [showWheel, setShowWheel]   = useState(false);
   const [savingMood, setSavingMood] = useState(false);
 
   const displayName = user?.displayName || user?.username || 'bạn';
   const initials    = displayName.slice(0, 2).toUpperCase();
-
-  const toggleHabit = (i: number) =>
-    setHabits(prev => prev.map((v, idx) => idx === i ? !v : v));
 
   const getGreeting = () => {
     const h = new Date().getHours();
@@ -54,27 +41,24 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      pingStreak();
       (async () => {
         setLoadingLog(true);
         try {
-          const [todayRes, logsRes] = await Promise.all([
+          const [todayRes, logs7Res, statsRes] = await Promise.all([
             api.get('/logs/today'),
             api.get('/logs?limit=7'),
+            api.get('/logs/stats'),
           ]);
 
           if (!active) return;
 
           setTodayLog(todayRes.data?.log ?? null);
 
-          const logs: TodayLog[] = logsRes.data ?? [];
-          if (logs.length > 0) {
-            const avg = logs.reduce((s, l) => s + l.moodScore, 0) / logs.length;
-            setStats({
-              streak:    logs.length,
-              avgMood:   avg.toFixed(1),
-              totalDays: logs.length,
-            });
-          }
+          const logs7: TodayLog[] = logs7Res.data ?? [];
+          setAvgMood(calculateAverageMood(logs7));
+
+          setTotalLogs(Number(statsRes.data?.totalLogs ?? 0));
         } catch {
         } finally {
           if (active) setLoadingLog(false);
@@ -133,7 +117,7 @@ export default function HomeScreen() {
     }
   };
 
-  const moodInfo = todayLog ? getMoodInfo(todayLog.mood) : null;
+  const moodInfo = todayLog ? getMoodInfoByName(MOODS, todayLog.mood) : null;
 
   return (
     <SafeAreaView style={s.container} edges={['top']}>
@@ -154,28 +138,28 @@ export default function HomeScreen() {
 
         <View style={s.summaryRow}>
           <View style={s.summaryCard}>
-            <Text style={s.summaryValue}>{stats.streak}</Text>
-            <Text style={s.summaryLabel}>Ngày gần đây</Text>
+            <Text style={s.summaryValue}>{streak}</Text>
+            <Text style={s.summaryLabel}>Chuỗi ngày</Text>
           </View>
           <View style={s.summaryCard}>
-            <Text style={s.summaryValue}>{stats.avgMood}</Text>
-            <Text style={s.summaryLabel}>Mood TB tuần</Text>
+            <Text style={s.summaryValue}>{avgMood}</Text>
+            <Text style={s.summaryLabel}>Mood TB 7 ngày</Text>
           </View>
           <View style={s.summaryCard}>
-            <Text style={s.summaryValue}>{stats.totalDays}</Text>
-            <Text style={s.summaryLabel}>Ngày đã log</Text>
+            <Text style={s.summaryValue}>{totalLogs}</Text>
+            <Text style={s.summaryLabel}>Log đã ghi</Text>
           </View>
         </View>
 
         <Text style={s.sectionTitle}>Hôm nay bạn thế nào?</Text>
 
         <TouchableOpacity
-          style={[s.quickLogCard, cardShadow]}
+          style={[s.quickLogCard, homeQuickLogShadow]}
           onPress={() => setShowWheel(true)}
           activeOpacity={0.85}
         >
           {loadingLog || savingMood ? (
-            <ActivityIndicator color="#1BAABD" style={{ paddingVertical: 20 }} />
+            <ActivityIndicator color="#1BAABD" style={s.quickLogLoading} />
           ) : todayLog && moodInfo ? (
             <View style={s.quickLogInner}>
               <Text style={s.quickLogEmoji}>{moodInfo.emoji}</Text>
@@ -209,23 +193,7 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
-        <Text style={s.sectionTitle}>Thói quen hôm nay</Text>
-        {HABITS.map((h, i) => (
-          <TouchableOpacity key={i} style={s.habitCard} onPress={() => toggleHabit(i)}>
-            <View style={s.habitLeft}>
-              <Text style={s.habitEmoji}>{h.emoji}</Text>
-              <View>
-                <Text style={s.habitName}>{h.name}</Text>
-                <Text style={s.habitSub}>{h.sub}</Text>
-              </View>
-            </View>
-            <View style={[s.habitCheck, habits[i] && s.habitCheckDone]}>
-              {habits[i] && <Text style={s.habitCheckText}>✓</Text>}
-            </View>
-          </TouchableOpacity>
-        ))}
-
-        <View style={{ height: 40 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       {showWheel && (
