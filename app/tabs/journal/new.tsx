@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import JournalEntryForm, { JournalFormData } from '../../../components/journal/JournalEntryForm';
 import api from '../../../services/core/api';
+import { uploadLogMedia } from '../../../services/journal/log-media.service';
 import { journalHeaderStyles as h, journalToastStyles as t, journalNewStyles as s } from '../../../styles/journal/journal.styles';
 
 export default function NewJournalScreen() {
@@ -39,12 +40,24 @@ export default function NewJournalScreen() {
     if (!canSave || loading) return;
     setLoading(true);
     try {
-      await api.post('/logs', {
+      const res = await api.post('/logs', {
         mood:      formData.mood?.name  ?? 'neutral',
         moodScore: formData.mood?.score ?? 3,
         factors:   [],
         note:      formData.note.trim() || null,
       });
+
+      const logId = res.data?.id;
+      if (logId) {
+        const photoUploads = formData.photos
+          .filter((p) => !p.id)
+          .map((p) => uploadLogMedia(logId, p.uri, 'photo'));
+        const audioUploads = formData.audios
+          .filter((a) => !a.id)
+          .map((a) => uploadLogMedia(logId, a.uri, 'audio'));
+        await Promise.all([...photoUploads, ...audioUploads]);
+      }
+
       setToastVisible(true);
     } catch (error: any) {
       if (error?.response?.status === 409) {
