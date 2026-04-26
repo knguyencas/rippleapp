@@ -5,17 +5,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../../constants/colors';
-import { chatStyles as s } from '../../../styles/chat.styles';
+import { chatStyles as s } from '../../../styles/chat/chat.styles';
 import { useAuthStore } from '../../../stores/auth.store';
-import api from '../../../services/api';
-
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  text: string;
-  time: Date;
-}
+import api from '../../../services/core/api';
+import {
+  loadChatHistory,
+  saveChatHistory,
+  ChatMessage as Message,
+} from '../../../services/chat/chat-history.service';
 
 const INITIAL_MESSAGES: Message[] = [
   {
@@ -35,12 +32,26 @@ const QUICK_REPLIES = [
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [hydrated, setHydrated] = useState(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const { user, token } = useAuthStore();
 
   const displayName = user?.displayName || user?.username || 'bạn';
+
+  useEffect(() => {
+    (async () => {
+      const stored = await loadChatHistory();
+      if (stored.length > 0) setMessages(stored);
+      setHydrated(true);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveChatHistory(messages);
+  }, [messages, hydrated]);
 
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
