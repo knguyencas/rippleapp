@@ -6,8 +6,8 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import JournalEntryForm, { JournalFormData } from '../../../components/journal/JournalEntryForm';
-import api from '../../../services/api';
-import { J, journalHeaderStyles as h, journalToastStyles as t, journalNewStyles as s } from '../../../styles/journal.styles';
+import api from '../../../services/core/api';
+import { journalHeaderStyles as h, journalToastStyles as t, journalNewStyles as s } from '../../../styles/journal/journal.styles';
 
 export default function NewJournalScreen() {
   const [formData, setFormData] = useState<JournalFormData>({
@@ -65,6 +65,22 @@ export default function NewJournalScreen() {
     }
   };
 
+  const handleCancel = () => {
+    if (!canSave) {
+      router.navigate('/tabs/journal');
+      return;
+    }
+    Alert.alert(
+      'Lưu nhật ký hôm nay?',
+      'Bạn đã nhập một số nội dung. Bạn có muốn lưu lại không?',
+      [
+        { text: 'Huỷ', style: 'cancel' },
+        { text: 'Không lưu', style: 'destructive', onPress: () => router.navigate('/tabs/journal') },
+        { text: 'Lưu', onPress: handleSubmit },
+      ]
+    );
+  };
+
   const dateStr = new Date().toLocaleDateString('vi-VN', {
     weekday: 'short', day: 'numeric', month: 'long', year: 'numeric',
   });
@@ -73,28 +89,13 @@ export default function NewJournalScreen() {
     <SafeAreaView style={s.safe}>
 
       <View style={h.header}>
-        <TouchableOpacity
-          onPress={() => router.navigate('/tabs/journal')}
-          style={h.headerBtn}
-        >
+        <TouchableOpacity onPress={handleCancel} style={h.headerBtn}>
           <Text style={h.headerBtnText}>‹</Text>
         </TouchableOpacity>
 
         <Text style={h.headerDate}>{dateStr}</Text>
 
         <View style={h.headerRight}>
-          <TouchableOpacity
-            style={h.headerBtn}
-            onPress={() =>
-              Alert.alert('Xoá nhật ký?', 'Nội dung chưa được lưu sẽ mất.', [
-                { text: 'Huỷ', style: 'cancel' },
-                { text: 'Xoá', style: 'destructive', onPress: () => router.navigate('/tabs/journal') },
-              ])
-            }
-          >
-            <Text style={[h.headerBtnText, { color: J.deleteRed, fontSize: 18 }]}>X</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[h.saveBtn, !canSave && h.saveBtnOff]}
             onPress={handleSubmit}
@@ -106,13 +107,13 @@ export default function NewJournalScreen() {
       </View>
 
       <ScrollView
-        style={{ flex: 1 }}
+        style={s.scroll}
         contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         <JournalEntryForm onChange={setFormData} />
-        <View style={{ height: 48 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       {toastVisible && (
