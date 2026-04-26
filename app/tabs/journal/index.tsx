@@ -5,9 +5,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import api from '../../../services/api';
+import api from '../../../services/core/api';
 import { MOODS } from '../../../components/mood/MoodWheel';
-import { journalIndexStyles as s, J } from '../../../styles/journal.styles';
+import { journalIndexStyles as s, J } from '../../../styles/journal/journal.styles';
+import { getMoodEmojiByName } from '../../../utils/shared/mood.utils';
+import { groupLogsByMonth } from '../../../utils/journal/journal.utils';
 
 interface Log {
   id: string;
@@ -15,27 +17,6 @@ interface Log {
   moodScore: number;
   note: string | null;
   createdAt: string;
-}
-
-function getMoodEmoji(moodName: string): string {
-  const found = MOODS.find(m => m.name.toLowerCase() === moodName?.toLowerCase());
-  return found?.emoji ?? '';
-}
-
-function groupByMonth(logs: Log[]) {
-  const groups: { key: string; label: string; logs: Log[] }[] = [];
-  const map: Record<string, number> = {};
-  logs.forEach(log => {
-    const date  = new Date(log.createdAt);
-    const key   = `${date.getFullYear()}-${date.getMonth()}`;
-    const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    if (map[key] === undefined) {
-      map[key] = groups.length;
-      groups.push({ key, label, logs: [] });
-    }
-    groups[map[key]].logs.push(log);
-  });
-  return groups;
 }
 
 export default function JournalScreen() {
@@ -69,12 +50,12 @@ export default function JournalScreen() {
       ? router.push(`/tabs/journal/${todayLogId}?edit=true`)
       : router.push('/tabs/journal/new');
 
-  const grouped = groupByMonth(logs);
+  const grouped = groupLogsByMonth(logs);
 
   if (loading) {
     return (
       <SafeAreaView style={s.safe}>
-        <ActivityIndicator style={{ flex: 1 }} color={J.btnBg} />
+        <ActivityIndicator style={s.loadingIndicator} color={J.btnBg} />
       </SafeAreaView>
     );
   }
@@ -103,16 +84,6 @@ export default function JournalScreen() {
                 <Text style={s.actionBtnText}>
                   {todayLogId ? 'Tiếp tục viết' : 'Bắt đầu viết'}
                 </Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={s.actionChevron}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={s.actionCard} onPress={() => router.push('/tabs/journal/new')} activeOpacity={0.85}>
-            <View style={s.actionCardLeft}>
-              <Text style={s.actionCardTitle}>Lưu lại những khoảnh khắc yêu thích</Text>
-              <TouchableOpacity style={s.actionBtn} onPress={() => router.push('/tabs/journal/new')}>
-                <Text style={s.actionBtnText}>Thêm ảnh</Text>
               </TouchableOpacity>
             </View>
             <Text style={s.actionChevron}>›</Text>
@@ -156,7 +127,7 @@ export default function JournalScreen() {
                         </Text>
                       ) : (
                         <Text style={s.entryEmpty}>
-                          {getMoodEmoji(log.mood)}  {log.mood}
+                          {getMoodEmojiByName(MOODS, log.mood)}  {log.mood}
                         </Text>
                       )}
                     </View>
@@ -167,7 +138,7 @@ export default function JournalScreen() {
           ))
         )}
 
-        <View style={{ height: 48 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
