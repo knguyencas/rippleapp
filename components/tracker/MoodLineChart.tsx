@@ -1,5 +1,12 @@
-import { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, LayoutChangeEvent } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import {
+  Animated,
+  Easing,
+  LayoutChangeEvent,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Colors } from '../../constants/colors';
 import { moodLineChartStyles as s } from '../../styles/tracker/tracker.styles';
 import { toDateKey as dateKey } from '../../utils/shared/date.utils';
@@ -25,6 +32,7 @@ const PERIOD_CFG: Record<Period, { days: number; bucketDays: number; label: stri
 
 const CHART_HEIGHT = 160;
 const DOT_SIZE = 8;
+const CURRENT_DOT_SIZE = 10;
 const LINE_THICKNESS = 2;
 const Y_TICKS = [5, 4, 3, 2, 1];
 
@@ -104,6 +112,8 @@ function lineSegment(
 export default function MoodLineChart({ scoreByDate }: Props) {
   const [period, setPeriod] = useState<Period>('1m');
   const [plotWidth, setPlotWidth] = useState(0);
+  const chartOpacity = useRef(new Animated.Value(1)).current;
+  const chartTranslateY = useRef(new Animated.Value(0)).current;
 
   const points = useMemo(() => buildPoints(scoreByDate, period), [scoreByDate, period]);
 
@@ -137,6 +147,47 @@ export default function MoodLineChart({ scoreByDate }: Props) {
   const xLabels = points
     .map((p, i) => ({ p, i }))
     .filter(({ i }) => i % labelStep === 0 || i === points.length - 1);
+  const currentPointIndex = points.reduce(
+    (last, point, index) => (point.score == null ? last : index),
+    -1
+  );
+
+  const handlePeriodPress = (nextPeriod: Period) => {
+    if (nextPeriod === period) return;
+
+    Animated.parallel([
+      Animated.timing(chartOpacity, {
+        toValue: 0.35,
+        duration: 120,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(chartTranslateY, {
+        toValue: 6,
+        duration: 120,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setPeriod(nextPeriod);
+      chartOpacity.setValue(0.35);
+      chartTranslateY.setValue(6);
+      Animated.parallel([
+        Animated.timing(chartOpacity, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(chartTranslateY, {
+          toValue: 0,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+  };
 
   return (
     <View style={s.card}>
@@ -150,7 +201,7 @@ export default function MoodLineChart({ scoreByDate }: Props) {
           <TouchableOpacity
             key={p}
             style={[s.toggleBtn, period === p && s.toggleBtnActive]}
-            onPress={() => setPeriod(p)}
+            onPress={() => handlePeriodPress(p)}
           >
             <Text style={[s.toggleText, period === p && s.toggleTextActive]}>
               {PERIOD_CFG[p].label}
@@ -167,7 +218,12 @@ export default function MoodLineChart({ scoreByDate }: Props) {
           </Text>
         </View>
       ) : (
-        <>
+        <Animated.View
+          style={{
+            opacity: chartOpacity,
+            transform: [{ translateY: chartTranslateY }],
+          }}
+        >
           <View style={s.chartWrap}>
             <View style={[s.yAxis, { height: CHART_HEIGHT }]}>
               {Y_TICKS.map(t => (
@@ -200,16 +256,22 @@ export default function MoodLineChart({ scoreByDate }: Props) {
                   if (p.score == null) return null;
                   const cx = xFor(i);
                   const cy = yFor(p.score);
+                  const isCurrentPoint = i === currentPointIndex;
+                  const size = isCurrentPoint ? CURRENT_DOT_SIZE : DOT_SIZE;
                   return (
                     <View
                       key={i}
-                      style={[s.dot, {
-                        width: DOT_SIZE,
-                        height: DOT_SIZE,
-                        borderRadius: DOT_SIZE / 2,
-                        left: cx - DOT_SIZE / 2,
-                        top: cy - DOT_SIZE / 2,
-                      }]}
+                      style={[
+                        s.dot,
+                        isCurrentPoint && s.dotCurrent,
+                        {
+                          width: size,
+                          height: size,
+                          borderRadius: size / 2,
+                          left: cx - size / 2,
+                          top: cy - size / 2,
+                        },
+                      ]}
                     />
                   );
                 })}
@@ -241,7 +303,7 @@ export default function MoodLineChart({ scoreByDate }: Props) {
               <Text style={s.summaryLabel}>Điểm dữ liệu</Text>
             </View>
           </View>
-        </>
+        </Animated.View>
       )}
     </View>
   );

@@ -77,23 +77,30 @@ export const trackerScreenStyles = StyleSheet.create({
 });
 
 export const moodCalendarStyles = StyleSheet.create({
+  section: {
+    marginHorizontal: 20,
+  },
   card: {
-    marginHorizontal: 24,
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
+    padding: 14,
+    marginBottom: 0,
     overflow: 'hidden',
+    shadowColor: '#1A3A4A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 3,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 8,
   },
   title: {
     fontFamily: 'Nunito_700Bold',
-    fontSize: 18,
+    fontSize: 15,
     color: Colors.textPrimary,
     textTransform: 'capitalize',
   },
@@ -101,11 +108,6 @@ export const moodCalendarStyles = StyleSheet.create({
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 12,
     color: Colors.teal,
-    backgroundColor: Colors.foam,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-    overflow: 'hidden',
   },
   weekdayRow: {
     flexDirection: 'row',
@@ -127,12 +129,17 @@ export const moodCalendarStyles = StyleSheet.create({
   },
   dayCell: {
     flex: 1,
-    aspectRatio: 1,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    margin: 2,
-    borderRadius: 10,
     backgroundColor: 'transparent',
+  },
+  dayCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
   },
   dayCellOutOfMonth: {
@@ -142,14 +149,20 @@ export const moodCalendarStyles = StyleSheet.create({
     opacity: 0.35,
   },
   dayCellLogged: {
-    backgroundColor: Colors.teal + '22',
+    backgroundColor: '#C4DDED',
   },
   dayCellToday: {
-    borderWidth: 1.5,
-    borderColor: Colors.teal,
+    backgroundColor: '#2E6F8E',
+    shadowColor: '#2E6F8E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
   },
   dayCellSelected: {
-    backgroundColor: Colors.teal,
+    borderWidth: 1.5,
+    borderColor: Colors.teal,
+    backgroundColor: 'transparent',
   },
   dayNumber: {
     fontFamily: 'Nunito_600SemiBold',
@@ -157,11 +170,15 @@ export const moodCalendarStyles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   dayNumberLogged: {
-    color: Colors.teal,
+    color: Colors.textPrimary,
+    fontFamily: 'Nunito_700Bold',
+  },
+  dayNumberToday: {
+    color: Colors.textLight,
     fontFamily: 'Nunito_700Bold',
   },
   dayNumberSelected: {
-    color: Colors.textLight,
+    color: Colors.teal,
     fontFamily: 'Nunito_700Bold',
   },
   loggedDot: {
@@ -239,11 +256,16 @@ export const moodCalendarStyles = StyleSheet.create({
 
 export const moodLineChartStyles = StyleSheet.create({
   card: {
-    marginHorizontal: 24,
-    backgroundColor: Colors.surface,
+    marginHorizontal: 20,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 24,
+    marginBottom: 0,
+    shadowColor: '#1A3A4A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 3,
   },
   header: {
     marginBottom: 12,
@@ -307,7 +329,8 @@ export const moodLineChartStyles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: '#EEF4F8',
+    opacity: 0.65,
   },
   lineSegment: {
     position: 'absolute',
@@ -316,8 +339,11 @@ export const moodLineChartStyles = StyleSheet.create({
   dot: {
     position: 'absolute',
     backgroundColor: Colors.teal,
+  },
+  dotCurrent: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 2,
-    borderColor: Colors.foam,
+    borderColor: Colors.teal,
   },
   xAxisRow: {
     flexDirection: 'row',
@@ -367,7 +393,7 @@ export const moodLineChartStyles = StyleSheet.create({
 
 export const waterTrackerStyles = StyleSheet.create({
   card: {
-    marginHorizontal: 24,
+    marginHorizontal: 20,
     marginTop: 20,
     backgroundColor: Colors.foam,
     borderRadius: 18,
@@ -476,7 +502,7 @@ export const waterTrackerStyles = StyleSheet.create({
 
 export const sleepTrackerStyles = StyleSheet.create({
   card: {
-    marginHorizontal: 24,
+    marginHorizontal: 20,
     marginTop: 20,
     backgroundColor: Colors.foam,
     borderRadius: 18,
@@ -587,7 +613,7 @@ export const sleepTrackerStyles = StyleSheet.create({
 
 export const stepsTrackerStyles = StyleSheet.create({
   card: {
-    marginHorizontal: 24,
+    marginHorizontal: 20,
     marginTop: 20,
     backgroundColor: Colors.foam,
     borderRadius: 18,

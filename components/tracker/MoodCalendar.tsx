@@ -150,99 +150,108 @@ export default function MoodCalendar({ logsByDate }: Props) {
   };
 
   return (
-    <View style={s.card}>
+    <View style={s.section}>
       <View style={s.header}>
         <Text style={s.title}>{monthLabel}</Text>
         <Text style={s.countBadge}>{loggedCountInMonth}/{monthDaysTotal} ngày</Text>
       </View>
 
-      <View style={s.weekdayRow}>
-        {WEEKDAYS_VI.map(w => (
-          <View key={w} style={s.weekdayCell}>
-            <Text style={s.weekdayText}>{w}</Text>
-          </View>
-        ))}
-      </View>
+      <View style={s.card}>
+        <View style={s.weekdayRow}>
+          {WEEKDAYS_VI.map(w => (
+            <View key={w} style={s.weekdayCell}>
+              <Text style={s.weekdayText}>{w}</Text>
+            </View>
+          ))}
+        </View>
 
-      {weeks.map((week, wi) => (
-        <View key={wi} style={s.weekRow}>
-          {week.map(date => {
-            const k = toDateKey(date);
-            const inMonth = date.getMonth() === today.getMonth();
-            const isFuture = date > today;
-            const logged = inMonth && !isFuture && !!logsByDate[k]?.length;
-            const isToday = k === todayKey;
-            const isSelected = k === selectedKey;
+        {weeks.map((week, wi) => (
+          <View key={wi} style={s.weekRow}>
+            {week.map(date => {
+              const k = toDateKey(date);
+              const inMonth = date.getMonth() === today.getMonth();
+              const isFuture = date > today;
+              const logged = inMonth && !isFuture && !!logsByDate[k]?.length;
+              const isToday = k === todayKey;
+              const isSelected = k === selectedKey;
 
-            return (
-              <TouchableOpacity
-                key={k}
-                activeOpacity={inMonth && !isFuture ? 0.7 : 1}
-                onPress={() => handleDayPress(k, inMonth, isFuture)}
-                style={[
-                  s.dayCell,
-                  !inMonth && s.dayCellOutOfMonth,
-                  inMonth && isFuture && s.dayCellFuture,
-                  logged && !isSelected && s.dayCellLogged,
-                  isToday && !isSelected && s.dayCellToday,
-                  isSelected && s.dayCellSelected,
-                ]}
-              >
-                <Text
+              return (
+                <TouchableOpacity
+                  key={k}
+                  activeOpacity={inMonth && !isFuture ? 0.7 : 1}
+                  onPress={() => handleDayPress(k, inMonth, isFuture)}
                   style={[
-                    s.dayNumber,
-                    logged && !isSelected && s.dayNumberLogged,
-                    isSelected && s.dayNumberSelected,
+                    s.dayCell,
+                    !inMonth && s.dayCellOutOfMonth,
+                    inMonth && isFuture && s.dayCellFuture,
                   ]}
                 >
-                  {date.getDate()}
-                </Text>
-                {logged && (
-                  <View style={[s.loggedDot, isSelected && s.loggedDotSelected]} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      ))}
+                  <View
+                    style={[
+                      s.dayCircle,
+                      logged && !isToday && !isSelected && s.dayCellLogged,
+                      isSelected && !isToday && s.dayCellSelected,
+                      isToday && s.dayCellToday,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        s.dayNumber,
+                        logged && !isToday && !isSelected && s.dayNumberLogged,
+                        isSelected && !isToday && s.dayNumberSelected,
+                        isToday && s.dayNumberToday,
+                      ]}
+                    >
+                      {date.getDate()}
+                    </Text>
+                    {logged && !isToday && (
+                      <View style={[s.loggedDot, isSelected && s.loggedDotSelected]} />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
 
-      {selectedKey && (
-        <View style={s.activityPanel}>
-          <Text style={s.activityTitle}>
-            {formatSelectedDate(selectedKey)}
-          </Text>
+        {selectedKey && (
+          <View style={s.activityPanel}>
+            <Text style={s.activityTitle}>
+              {formatSelectedDate(selectedKey)}
+            </Text>
 
-          {activityCards.length === 0 ? (
-            <Text style={s.activityEmpty}>Chưa có hoạt động ngày này.</Text>
-          ) : (
-            activityCards.map(card => (
-              <TouchableOpacity
-                key={card.key}
-                style={s.activityCard}
-                onPress={() => handleCardPress(card.logId)}
-                activeOpacity={0.8}
-              >
-                {card.kind === 'vote' && card.emoji ? (
-                  <Text style={s.activityEmoji}>{card.emoji}</Text>
-                ) : (
-                  <View style={s.activityIconWrap}>
-                    <Text style={s.activityIcon}>
-                      {card.kind === 'log' ? '✎' : '♥'}
+            {activityCards.length === 0 ? (
+              <Text style={s.activityEmpty}>Chưa có hoạt động ngày này.</Text>
+            ) : (
+              activityCards.map(card => (
+                <TouchableOpacity
+                  key={card.key}
+                  style={s.activityCard}
+                  onPress={() => handleCardPress(card.logId)}
+                  activeOpacity={0.8}
+                >
+                  {card.kind === 'vote' && card.emoji ? (
+                    <Text style={s.activityEmoji}>{card.emoji}</Text>
+                  ) : (
+                    <View style={s.activityIconWrap}>
+                      <Text style={s.activityIcon}>
+                        {card.kind === 'log' ? '✎' : '♥'}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={s.activityBody}>
+                    <Text style={s.activityLabel}>{card.title}</Text>
+                    <Text style={s.activitySub} numberOfLines={1}>
+                      {card.subtitle}
                     </Text>
                   </View>
-                )}
-                <View style={s.activityBody}>
-                  <Text style={s.activityLabel}>{card.title}</Text>
-                  <Text style={s.activitySub} numberOfLines={1}>
-                    {card.subtitle}
-                  </Text>
-                </View>
-                <Text style={s.activityChevron}>›</Text>
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
-      )}
+                  <Text style={s.activityChevron}>›</Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        )}
+      </View>
     </View>
   );
 }
