@@ -127,11 +127,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   pingStreak: async () => {
-    const { token, lastStreakDate } = get();
+    const { token } = get();
     if (!token) return;
 
     const today = todayKey();
-    if (lastStreakDate === today) return;
 
     try {
       const baseURL = process.env.EXPO_PUBLIC_API_URL;

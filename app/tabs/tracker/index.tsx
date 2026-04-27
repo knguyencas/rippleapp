@@ -1,29 +1,49 @@
-import { useState, useCallback, useMemo } from 'react';
-import { ScrollView, View, Text, ActivityIndicator, RefreshControl } from 'react-native';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { ScrollView, View, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, router } from 'expo-router';
 import { Colors } from '../../../constants/colors';
-import { commonStyles as c } from '../../../styles/shared/common.styles';
-import { trackerScreenStyles as s } from '../../../styles/tracker/tracker.styles';
 import api from '../../../services/core/api';
 import MoodCalendar, { LogItem } from '../../../components/tracker/MoodCalendar';
 import MoodLineChart from '../../../components/tracker/MoodLineChart';
-import WaterTracker from '../../../components/tracker/WaterTracker';
-import StepsTracker from '../../../components/tracker/StepsTracker';
-import SleepTracker from '../../../components/tracker/SleepTracker';
-import MoodEncouragement from '../../../components/tracker/MoodEncouragement';
-import MeditationCard from '../../../components/tracker/MeditationCard';
+import TrackerHeaderRedesign from '../../../components/tracker/TrackerHeaderRedesign';
+import HeroProgressCard from '../../../components/tracker/HeroProgressCard';
+import DailyChecklist, {
+  DailyChecklistHandle,
+  DailySummary,
+  DailyTaskId,
+} from '../../../components/tracker/DailyChecklist';
+import TrackerIconsRow from '../../../components/tracker/TrackerIconsRow';
+import StreaksCard from '../../../components/tracker/StreaksCard';
+import JournalCTA from '../../../components/tracker/JournalCTA';
+import SoraMessage from '../../../components/tracker/SoraMessage';
 import { fetchEncouragement, EncouragementPayload } from '../../../services/tracker/encouragement.service';
 import { useAuthStore } from '../../../stores/auth.store';
 import { toDateKey } from '../../../utils/shared/date.utils';
 
+const SECTION_GAP = 22;
+const DEFAULT_SUMMARY: DailySummary = {
+  doneCount: 0,
+  totalCount: 6,
+  percent: 0,
+  nextTask: 'mood',
+  recommendation: 'Vote tâm trạng trước nhé.',
+  ctaLabel: 'Chọn tâm trạng',
+};
+
 export default function TrackerScreen() {
+  const params = useLocalSearchParams<{ focus?: string }>();
+  const scrollRef = useRef<ScrollView>(null);
+  const checklistRef = useRef<DailyChecklistHandle>(null);
+  const sectionY = useRef<Record<string, number>>({});
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [encouragement, setEncouragement] = useState<EncouragementPayload | null>(null);
-  const streak = useAuthStore((s) => s.streak);
-  const pingStreak = useAuthStore((s) => s.pingStreak);
+  const [dailySummary, setDailySummary] = useState<DailySummary>(DEFAULT_SUMMARY);
+  const [progressAnimationKey, setProgressAnimationKey] = useState(0);
+  const streak = useAuthStore((st) => st.streak);
+  const pingStreak = useAuthStore((st) => st.pingStreak);
 
   const fetchLogs = async () => {
     try {
@@ -43,10 +63,11 @@ export default function TrackerScreen() {
   };
 
   useFocusEffect(useCallback(() => {
+    setProgressAnimationKey((key) => key + 1);
+    pingStreak();
     fetchLogs();
     fetchEnc();
-    pingStreak();
-  }, []));
+  }, [pingStreak]));
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -75,47 +96,159 @@ export default function TrackerScreen() {
     return out;
   }, [logsByDate]);
 
+  const monthStats = useMemo(() => {
+    const today = new Date();
+    const totalDaysInMonth = new Date(
+      today.getFullYear(),
+      today.getMonth() + 1,
+      0
+    ).getDate();
+    let daysLogged = 0;
+    for (let d = 1; d <= today.getDate(); d++) {
+      const key = toDateKey(new Date(today.getFullYear(), today.getMonth(), d));
+      if (logsByDate[key]?.length) daysLogged += 1;
+    }
+    return { daysLogged, totalDaysInMonth };
+  }, [logsByDate]);
+
+  const handleSummary = useCallback((summary: DailySummary) => {
+    setDailySummary(summary);
+  }, []);
+
+  const scrollToChecklist = () => {
+    const y = sectionY.current.checklist ?? 0;
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+  };
+
+  const handleHeroCta = () => {
+    const nextTask: DailyTaskId = dailySummary.nextTask;
+    if (nextTask === 'mood') {
+      router.push('/tabs/home');
+      return;
+    }
+    if (nextTask === 'journal' || nextTask === 'done') {
+      router.push('/tabs/journal/new');
+      return;
+    }
+    if (nextTask === 'water') {
+      scrollToChecklist();
+      checklistRef.current?.incrementWater();
+      return;
+    }
+    if (nextTask === 'steps') {
+      scrollToChecklist();
+      void checklistRef.current?.syncSteps();
+      return;
+    }
+    if (nextTask === 'meditation') {
+      scrollToChecklist();
+      checklistRef.current?.openMeditation();
+      return;
+    }
+    scrollToChecklist();
+  };
+
+  const handleJournalCta = () => {
+    router.push('/tabs/journal/new');
+  };
+
+  useEffect(() => {
+    if (loading) return;
+    const focus = Array.isArray(params.focus) ? params.focus[0] : params.focus;
+    if (focus !== 'calendar' && focus !== 'chart') return;
+
+    const timer = setTimeout(() => {
+      const y = sectionY.current[focus] ?? 0;
+      scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [loading, params.focus]);
+
   return (
-    <SafeAreaView style={c.safe}>
+    <SafeAreaView style={styles.safe}>
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.teal} />
         }
       >
-        <View style={s.header}>
-          <View>
-            <Text style={s.headerTitle}>Tracker</Text>
-            <Text style={s.headerSub}>Theo dõi sức khỏe & cảm xúc</Text>
-          </View>
-
-          <View style={[s.streakBadge, streak === 0 && s.streakBadgeCold]}>
-            <Text style={s.streakFlame}>{streak > 0 ? '🔥' : '🌊'}</Text>
-            <View>
-              <Text style={[s.streakNum, streak === 0 && s.streakNumCold]}>{streak}</Text>
-              <Text style={[s.streakLabel, streak === 0 && s.streakLabelCold]}>
-                {streak === 1 ? 'ngày' : 'ngày liên tục'}
-              </Text>
-            </View>
-          </View>
-        </View>
+        <TrackerHeaderRedesign />
 
         {loading ? (
-          <ActivityIndicator style={s.loadingIndicator} color={Colors.teal} />
+          <ActivityIndicator style={styles.loading} color={Colors.teal} />
         ) : (
           <>
-            <MoodCalendar logsByDate={logsByDate} />
-            <WaterTracker hint={encouragement?.water ?? null} />
-            <StepsTracker hint={encouragement?.steps ?? null} />
-            <SleepTracker hint={encouragement?.sleep ?? null} />
-            <MeditationCard />
-            <MoodLineChart scoreByDate={scoreByDate} />
-            <MoodEncouragement message={encouragement?.mood ?? null} />
+            <HeroProgressCard
+              doneCount={dailySummary.doneCount}
+              totalCount={dailySummary.totalCount}
+              percent={dailySummary.percent}
+              animationKey={progressAnimationKey}
+              recommendation={dailySummary.recommendation}
+              ctaLabel={dailySummary.ctaLabel}
+              onCtaPress={handleHeroCta}
+            />
+
+            <JournalCTA onPress={handleJournalCta} />
+
+            <View
+              onLayout={(event) => { sectionY.current.checklist = event.nativeEvent.layout.y; }}
+            >
+              <DailyChecklist ref={checklistRef} onSummary={handleSummary} />
+            </View>
+
+            <TrackerIconsRow />
+
+            <StreaksCard
+              currentStreak={streak}
+              daysLoggedThisMonth={monthStats.daysLogged}
+              totalDaysInMonth={monthStats.totalDaysInMonth}
+            />
+
+            <View
+              style={styles.calendarWrap}
+              onLayout={(event) => { sectionY.current.calendar = event.nativeEvent.layout.y; }}
+            >
+              <MoodCalendar logsByDate={logsByDate} />
+            </View>
+
+            <View
+              style={styles.chartWrap}
+              onLayout={(event) => { sectionY.current.chart = event.nativeEvent.layout.y; }}
+            >
+              <MoodLineChart scoreByDate={scoreByDate} />
+            </View>
+
+            {encouragement?.mood && <SoraMessage message={encouragement.mood} />}
           </>
         )}
 
-        <View style={s.bottomSpacer} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: '#FAF5E6',
+  },
+  scrollContent: {
+    paddingBottom: 32,
+  },
+  loading: {
+    marginTop: 40,
+  },
+  calendarWrap: {
+    marginTop: SECTION_GAP,
+  },
+  chartWrap: {
+    marginTop: SECTION_GAP,
+  },
+  bottomSpacer: {
+    height: 24,
+  },
+});
