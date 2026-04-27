@@ -1,10 +1,13 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 const AUDIO_DIR = `${FileSystem.documentDirectory}meditation_audio/`;
 const INDEX_KEY = '@ripple_meditation_downloaded';
+const CAN_USE_FILE_SYSTEM = Platform.OS !== 'web';
 
 async function ensureDir(): Promise<void> {
+  if (!CAN_USE_FILE_SYSTEM) return;
   const info = await FileSystem.getInfoAsync(AUDIO_DIR);
   if (!info.exists) {
     await FileSystem.makeDirectoryAsync(AUDIO_DIR, { intermediates: true });
@@ -34,6 +37,8 @@ export function getLocalUri(soundId: string): string {
 }
 
 export async function getDownloadedSet(): Promise<Set<string>> {
+  if (!CAN_USE_FILE_SYSTEM) return new Set();
+
   const indexed = await loadIndex();
   if (indexed.size === 0) return indexed;
 
@@ -49,6 +54,8 @@ export async function getDownloadedSet(): Promise<Set<string>> {
 }
 
 export async function isDownloaded(soundId: string): Promise<boolean> {
+  if (!CAN_USE_FILE_SYSTEM) return false;
+
   const info = await FileSystem.getInfoAsync(getLocalUri(soundId));
   return info.exists && info.size > 0;
 }
@@ -58,6 +65,11 @@ export async function downloadSound(
   url: string,
   onProgress?: (ratio: number) => void
 ): Promise<string> {
+  if (!CAN_USE_FILE_SYSTEM) {
+    onProgress?.(1);
+    return url;
+  }
+
   await ensureDir();
   const dest = getLocalUri(soundId);
 
@@ -86,6 +98,8 @@ export async function downloadSound(
 }
 
 export async function deleteSound(soundId: string): Promise<void> {
+  if (!CAN_USE_FILE_SYSTEM) return;
+
   try {
     await FileSystem.deleteAsync(getLocalUri(soundId), { idempotent: true });
   } finally {

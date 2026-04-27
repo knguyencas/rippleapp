@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import {
   meditationModalStyles as s,
@@ -39,8 +40,6 @@ interface Props {
   onSessionSaved?: (actualMin: number) => void;
 }
 
-const SOUND_IDS = ['rain', 'ocean', 'forest', 'white_noise', 'ambient_pad', 'bowl'];
-
 export default function MeditationModal({ visible, onClose, onSessionSaved }: Props) {
   const [sounds, setSounds] = useState<MeditationSound[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
@@ -52,6 +51,8 @@ export default function MeditationModal({ visible, onClose, onSessionSaved }: Pr
   const [duration, setDuration] = useState<DurationMin>(DEFAULT_DURATION);
   const [savingSession, setSavingSession] = useState(false);
   const [sessionStartedAt, setSessionStartedAt] = useState<Date | null>(null);
+  const [closeConfirmVisible, setCloseConfirmVisible] = useState(false);
+  const canCacheAudio = Platform.OS !== 'web';
 
   const { state: session, start, pause, resume, stopAndSave, cancel, dismissAwayDialog } =
     useMeditationSession(async (actualMin) => {
@@ -64,16 +65,13 @@ export default function MeditationModal({ visible, onClose, onSessionSaved }: Pr
     (async () => {
       setLoadingCatalog(true);
       try {
-        const [list, downloaded] = await Promise.all([
-          fetchSounds(),
-          (async () => {
-            const out = new Set<string>();
-            for (const id of SOUND_IDS) {
-              if (await isDownloaded(id)) out.add(id);
-            }
-            return out;
-          })(),
-        ]);
+        const list = await fetchSounds();
+        const downloaded = new Set<string>();
+        if (canCacheAudio) {
+          for (const sound of list) {
+            if (await isDownloaded(sound.id)) downloaded.add(sound.id);
+          }
+        }
         if (cancelled) return;
         setSounds(list);
         setDownloadedSet(downloaded);
@@ -86,7 +84,7 @@ export default function MeditationModal({ visible, onClose, onSessionSaved }: Pr
       }
     })();
     return () => { cancelled = true; };
-  }, [visible]);
+  }, [visible, canCacheAudio]);
 
   const handleDownload = useCallback(
     async (sound: MeditationSound) => {
@@ -135,15 +133,17 @@ export default function MeditationModal({ visible, onClose, onSessionSaved }: Pr
 
   const handleStart = useCallback(async () => {
     if (!selectedSoundId) return;
-    if (!downloadedSet.has(selectedSoundId)) {
-      const sound = sounds.find((sd) => sd.id === selectedSoundId);
-      if (sound) await handleDownload(sound);
+    const sound = sounds.find((sd) => sd.id === selectedSoundId);
+    if (!sound) return;
+
+    if (canCacheAudio && !downloadedSet.has(selectedSoundId)) {
+      await handleDownload(sound);
       return;
     }
-    const uri = getLocalUri(selectedSoundId);
+    const uri = canCacheAudio ? getLocalUri(selectedSoundId) : sound.url;
     setSessionStartedAt(new Date());
     await start({ audioUri: uri, targetMin: duration });
-  }, [selectedSoundId, downloadedSet, sounds, duration, start, handleDownload]);
+  }, [selectedSoundId, downloadedSet, sounds, duration, start, handleDownload, canCacheAudio]);
 
   const handleStopAndSave = useCallback(async () => {
     const actualMin = await stopAndSave();
@@ -158,38 +158,81 @@ export default function MeditationModal({ visible, onClose, onSessionSaved }: Pr
       onClose();
       return;
     }
-    Alert.alert(
-      'Kết thúc phiên thiền?',
-      `Bạn đã thiền được ${Math.floor(session.elapsedSec / 60)} phút.`,
-      [
-        { text: 'Tiếp tục thiền', style: 'cancel', onPress: () => session.status === 'paused' && void resume() },
-        {
-          text: 'Lưu và đóng',
-          onPress: async () => {
-            await handleStopAndSave();
-            onClose();
-          },
-        },
-        {
-          text: 'Bỏ',
-          style: 'destructive',
-          onPress: async () => {
-            await cancel();
-            setSessionStartedAt(null);
-            onClose();
-          },
-        },
-      ]
-    );
-  }, [session.status, session.elapsedSec, resume, handleStopAndSave, cancel, onClose]);
+    void pause('user');
+    setCloseConfirmVisible(true);
+  }, [session.status, pause, onClose]);
+
+  const handleResumeFromClose = useCallback(() => {
+    setCloseConfirmVisible(false);
+    void resume();
+  }, [resume]);
+
+  const handleSaveAndClose = useCallback(async () => {
+    setCloseConfirmVisible(false);
+    await handleStopAndSave();
+    onClose();
+  }, [handleStopAndSave, onClose]);
+
+  const handleDiscardAndClose = useCallback(async () => {
+    setCloseConfirmVisible(false);
+    await cancel();
+    setSessionStartedAt(null);
+    onClose();
+  }, [cancel, onClose]);
 
   const inSession = session.status === 'playing' || session.status === 'paused';
   const remainingSec = Math.max(0, session.targetSec - session.elapsedSec);
+  const showingConfirm = session.showAwayDialog || closeConfirmVisible;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
       <View style={s.overlay}>
         <View style={s.card}>
+          {showingConfirm ? (
+            <>
+              <Text style={d.title}>
+                {session.showAwayDialog ? 'Phiên thiền đã tạm dừng' : 'Tạm dừng phiên thiền?'}
+              </Text>
+              <Text style={d.body}>
+                {session.showAwayDialog ? (
+                  <>
+                    Bạn đã rời app <Text style={d.bodyBold}>{session.awayDurationSec} giây</Text>.
+                    Đã thiền:{' '}
+                    <Text style={d.bodyBold}>
+                      {Math.floor(session.elapsedSec / 60)} phút {session.elapsedSec % 60} giây
+                    </Text>
+                    .
+                  </>
+                ) : (
+                  <>
+                    Bạn đã thiền được{' '}
+                    <Text style={d.bodyBold}>
+                      {Math.floor(session.elapsedSec / 60)} phút {session.elapsedSec % 60} giây
+                    </Text>
+                    . Bạn muốn tiếp tục hay thoát phiên này?
+                  </>
+                )}
+              </Text>
+              <View style={d.actionsStack}>
+                <TouchableOpacity
+                  style={[d.stackBtn, d.stackPrimaryBtn]}
+                  onPress={() => {
+                    dismissAwayDialog();
+                    handleResumeFromClose();
+                  }}
+                >
+                  <Text style={d.resumeText}>Tiếp tục thiền</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[d.stackBtn, d.stackSecondaryBtn]} onPress={handleSaveAndClose}>
+                  <Text style={d.endText}>Kết thúc & lưu</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[d.stackBtn, d.dangerBtn]} onPress={handleDiscardAndClose}>
+                  <Text style={d.dangerText}>Thoát không lưu</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <>
           <View style={s.headerRow}>
             <Text style={s.title}>Thiền</Text>
             <TouchableOpacity style={s.closeBtn} onPress={handleClose}>
@@ -213,7 +256,7 @@ export default function MeditationModal({ visible, onClose, onSessionSaved }: Pr
                 >
                   {sounds.map((sd) => {
                     const isActive = sd.id === selectedSoundId;
-                    const isDl = downloadedSet.has(sd.id);
+                    const isDl = !canCacheAudio || downloadedSet.has(sd.id);
                     const isCurrentlyDownloading = downloadingId === sd.id;
 
                     return (
@@ -294,7 +337,7 @@ export default function MeditationModal({ visible, onClose, onSessionSaved }: Pr
                 disabled={!selectedSoundId || loadingCatalog || downloadingId != null}
               >
                 <Text style={s.primaryBtnText}>
-                  {selectedSoundId && !downloadedSet.has(selectedSoundId)
+                  {selectedSoundId && canCacheAudio && !downloadedSet.has(selectedSoundId)
                     ? `Tải xuống & bắt đầu`
                     : 'Bắt đầu thiền'}
                 </Text>
@@ -330,36 +373,51 @@ export default function MeditationModal({ visible, onClose, onSessionSaved }: Pr
               </TouchableOpacity>
             )}
           </View>
+            </>
+          )}
         </View>
 
-        {session.showAwayDialog && (
+        {false && (session.showAwayDialog || closeConfirmVisible) && (
           <View style={d.backdrop} pointerEvents="auto">
             <View style={d.card}>
-              <Text style={d.title}>Phiên thiền đã tạm dừng</Text>
-              <Text style={d.body}>
-                Bạn đã rời app{' '}
-                <Text style={d.bodyBold}>{session.awayDurationSec} giây</Text>
-                . Đã thiền:{' '}
-                <Text style={d.bodyBold}>
-                  {Math.floor(session.elapsedSec / 60)} phút {session.elapsedSec % 60} giây
-                </Text>
-                .
+              <Text style={d.title}>
+                {session.showAwayDialog ? 'Phiên thiền đã tạm dừng' : 'Tạm dừng phiên thiền?'}
               </Text>
-              <View style={d.actions}>
+              <Text style={d.body}>
+                {session.showAwayDialog ? (
+                  <>
+                    Bạn đã rời app <Text style={d.bodyBold}>{session.awayDurationSec} giây</Text>.
+                    Đã thiền:{' '}
+                    <Text style={d.bodyBold}>
+                      {Math.floor(session.elapsedSec / 60)} phút {session.elapsedSec % 60} giây
+                    </Text>
+                    .
+                  </>
+                ) : (
+                  <>
+                    Bạn đã thiền được{' '}
+                    <Text style={d.bodyBold}>
+                      {Math.floor(session.elapsedSec / 60)} phút {session.elapsedSec % 60} giây
+                    </Text>
+                    . Bạn muốn tiếp tục hay thoát phiên này?
+                  </>
+                )}
+              </Text>
+              <View style={d.actionsStack}>
                 <TouchableOpacity
-                  style={d.endBtn}
-                  onPress={async () => {
+                  style={[d.resumeBtn, d.stackBtn]}
+                  onPress={() => {
                     dismissAwayDialog();
-                    await handleStopAndSave();
+                    handleResumeFromClose();
                   }}
                 >
-                  <Text style={d.endText}>Kết thúc</Text>
+                  <Text style={d.resumeText}>Tiếp tục thiền</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={d.resumeBtn}
-                  onPress={() => { dismissAwayDialog(); void resume(); }}
-                >
-                  <Text style={d.resumeText}>Tiếp tục</Text>
+                <TouchableOpacity style={[d.endBtn, d.stackBtn]} onPress={handleSaveAndClose}>
+                  <Text style={d.endText}>Kết thúc & lưu</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[d.dangerBtn, d.stackBtn]} onPress={handleDiscardAndClose}>
+                  <Text style={d.dangerText}>Thoát không lưu</Text>
                 </TouchableOpacity>
               </View>
             </View>

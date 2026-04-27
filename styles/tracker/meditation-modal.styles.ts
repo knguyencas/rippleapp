@@ -19,15 +19,15 @@ export const meditationModalStyles = StyleSheet.create({
     backgroundColor: 'rgba(12, 44, 58, 0.55)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   card: {
     width: '100%',
     maxWidth: 420,
     backgroundColor: Colors.foam,
-    borderRadius: 22,
-    paddingVertical: 22,
-    paddingHorizontal: 18,
+    borderRadius: 24,
+    paddingVertical: 28,
+    paddingHorizontal: 26,
     shadowColor: '#1A3A4A',
     shadowOpacity: 0.12,
     shadowOffset: { width: 0, height: 8 },
@@ -39,7 +39,7 @@ export const meditationModalStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   title: {
     fontFamily: 'Nunito_700Bold',
@@ -62,25 +62,26 @@ export const meditationModalStyles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
     fontSize: 12,
     color: Colors.textSecondary,
-    marginBottom: 16,
+    marginBottom: 22,
   },
 
   sectionLabel: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 13,
     color: Colors.textPrimary,
-    marginTop: 14,
-    marginBottom: 8,
+    marginTop: 18,
+    marginBottom: 12,
   },
 
   soundsScroll: {
-    paddingVertical: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
   },
   soundCard: {
-    width: 116,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    marginRight: 10,
+    width: 124,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    marginRight: 12,
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1.5,
@@ -143,12 +144,14 @@ export const meditationModalStyles = StyleSheet.create({
 
   durationRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
+    paddingTop: 2,
   },
   durationChip: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: Colors.border,
     backgroundColor: '#FFFFFF',
@@ -168,10 +171,12 @@ export const meditationModalStyles = StyleSheet.create({
   },
 
   hero: {
-    marginTop: 20,
+    marginTop: 24,
+    marginHorizontal: 4,
     backgroundColor: MEDITATE_BG,
     borderRadius: 20,
-    paddingVertical: 28,
+    paddingVertical: 32,
+    paddingHorizontal: 20,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: MEDITATE_BORDER,
@@ -190,13 +195,14 @@ export const meditationModalStyles = StyleSheet.create({
   },
 
   actions: {
-    marginTop: 18,
-    gap: 10,
+    marginTop: 24,
+    gap: 12,
   },
   primaryBtn: {
     backgroundColor: MEDITATE_GREEN,
-    borderRadius: 14,
-    paddingVertical: 14,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
     alignItems: 'center',
     shadowColor: MEDITATE_GREEN,
     shadowOpacity: 0.3,
@@ -214,8 +220,9 @@ export const meditationModalStyles = StyleSheet.create({
     shadowOpacity: 0.1,
   },
   secondaryBtn: {
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 18,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: Colors.border,
     alignItems: 'center',
@@ -231,7 +238,9 @@ export const meditationModalStyles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textSecondary,
     textAlign: 'center',
-    paddingVertical: 24,
+    paddingVertical: 32,
+    paddingHorizontal: 28,
+    lineHeight: 19,
   },
 });
 
@@ -270,7 +279,7 @@ export const meditationAwayDialogStyles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 19,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   bodyBold: {
     fontFamily: 'Nunito_700Bold',
@@ -280,6 +289,25 @@ export const meditationAwayDialogStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     width: '100%',
+  },
+  actionsStack: {
+    gap: 12,
+    width: '100%',
+  },
+  stackBtn: {
+    width: '100%',
+    minHeight: 44,
+    paddingVertical: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  stackPrimaryBtn: {
+    backgroundColor: MEDITATE_GREEN,
+  },
+  stackSecondaryBtn: {
+    borderWidth: 1.5,
+    borderColor: Colors.border,
   },
   endBtn: {
     flex: 1,
@@ -305,5 +333,14 @@ export const meditationAwayDialogStyles = StyleSheet.create({
     fontFamily: 'Nunito_700Bold',
     fontSize: 13,
     color: '#FFFFFF',
+  },
+  dangerBtn: {
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  dangerText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    color: '#B14A4A',
   },
 });
