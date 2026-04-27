@@ -1,12 +1,19 @@
 import { useCallback, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { homeStyles as s, homeQuickLogShadow } from '../../../styles/home/home.styles';
 import { useAuthStore } from '../../../stores/auth.store';
-import MoodWheel, { MOODS } from '../../../components/mood/MoodWheel';
 import api from '../../../services/core/api';
+import MoodWheel, { MOODS } from '../../../components/mood/MoodWheel';
+import HomeHeader from '../../../components/home/HomeHeader';
+import StatsRow from '../../../components/home/StatsRow';
+import MoodInputCard from '../../../components/home/MoodInputCard';
+import QuickActionsGrid from '../../../components/home/QuickActionsGrid';
+import PrimaryCTA from '../../../components/home/PrimaryCTA';
+import SoraPromoCard from '../../../components/home/SoraPromoCard';
+import { homeScreenStyles as s } from '../../../styles/home/home-screen.styles';
 import { calculateAverageMood, getMoodInfoByName } from '../../../utils/home/home.utils';
+import { fetchNotifications } from '../../../services/profile/notifications.service';
 
 interface TodayLog {
   id: string;
@@ -17,34 +24,21 @@ interface TodayLog {
 }
 
 export default function HomeScreen() {
-  const user = useAuthStore((s) => s.user);
   const streak = useAuthStore((s) => s.streak);
   const pingStreak = useAuthStore((s) => s.pingStreak);
 
-  const [todayLog, setTodayLog]     = useState<TodayLog | null>(null);
-  const [loadingLog, setLoadingLog] = useState(true);
-  const [avgMood, setAvgMood]       = useState<string>('-');
-  const [totalLogs, setTotalLogs]   = useState<number>(0);
-  const [showWheel, setShowWheel]   = useState(false);
-  const [savingMood, setSavingMood] = useState(false);
-
-  const displayName = user?.displayName || user?.username || 'bạn';
-  const initials    = displayName.slice(0, 2).toUpperCase();
-
-  const getGreeting = () => {
-    const h = new Date().getHours();
-    if (h < 12) return 'Chào buổi sáng';
-    if (h < 18) return 'Chào buổi chiều';
-    return 'Chào buổi tối';
-  };
+  const [todayLog, setTodayLog] = useState<TodayLog | null>(null);
+  const [avgMood, setAvgMood] = useState<string>('—');
+  const [totalLogs, setTotalLogs] = useState<number>(0);
+  const [hasNotification, setHasNotification] = useState(false);
+  const [showWheel, setShowWheel] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      pingStreak();
       (async () => {
-        setLoadingLog(true);
         try {
+          await pingStreak();
           const [todayRes, logs7Res, statsRes] = await Promise.all([
             api.get('/logs/today'),
             api.get('/logs?limit=7'),
@@ -54,36 +48,37 @@ export default function HomeScreen() {
           if (!active) return;
 
           setTodayLog(todayRes.data?.log ?? null);
-
-          const logs7: TodayLog[] = logs7Res.data ?? [];
-          setAvgMood(calculateAverageMood(logs7));
-
+          setAvgMood(calculateAverageMood(logs7Res.data ?? []));
           setTotalLogs(Number(statsRes.data?.totalLogs ?? 0));
         } catch {
-        } finally {
-          if (active) setLoadingLog(false);
+        }
+
+        try {
+          const notifications = await fetchNotifications(1);
+          if (active) setHasNotification(notifications.unreadCount > 0);
+        } catch {
+          if (active) setHasNotification(false);
         }
       })();
       return () => { active = false; };
-    }, [])
+    }, [pingStreak])
   );
 
   const handleMoodConfirm = async (mood: typeof MOODS[0]) => {
     setShowWheel(false);
-    setSavingMood(true);
     try {
       if (todayLog) {
         await api.put(`/logs/${todayLog.id}`, {
-          mood:      mood.name,
+          mood: mood.name,
           moodScore: mood.score,
         });
         setTodayLog({ ...todayLog, mood: mood.name, moodScore: mood.score });
       } else {
         const res = await api.post('/logs', {
-          mood:      mood.name,
+          mood: mood.name,
           moodScore: mood.score,
-          factors:   [],
-          note:      null,
+          factors: [],
+          note: null,
         });
         setTodayLog(res.data);
       }
@@ -93,10 +88,12 @@ export default function HomeScreen() {
         if (existingId) {
           try {
             await api.put(`/logs/${existingId}`, {
-              mood:      mood.name,
+              mood: mood.name,
               moodScore: mood.score,
             });
-            setTodayLog(prev => prev ? { ...prev, mood: mood.name, moodScore: mood.score } : null);
+            setTodayLog((prev) =>
+              prev ? { ...prev, mood: mood.name, moodScore: mood.score } : null
+            );
           } catch {
             Alert.alert('Lỗi', 'Không lưu được, thử lại nhé!');
           }
@@ -104,8 +101,6 @@ export default function HomeScreen() {
       } else {
         Alert.alert('Lỗi', 'Không lưu được, thử lại nhé!');
       }
-    } finally {
-      setSavingMood(false);
     }
   };
 
@@ -118,82 +113,45 @@ export default function HomeScreen() {
   };
 
   const moodInfo = todayLog ? getMoodInfoByName(MOODS, todayLog.mood) : null;
+  const moodLabel = moodInfo?.name ?? null;
 
   return (
     <SafeAreaView style={s.container} edges={['top']}>
-      <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <HomeHeader hasNotification={hasNotification} />
 
-        <View style={s.header}>
-          <View>
-            <Text style={s.greeting}>{getGreeting()}</Text>
-            <Text style={s.username}>{displayName}</Text>
-          </View>
-          <TouchableOpacity
-            style={s.avatar}
-            onPress={() => router.push('/tabs/profile')}
-          >
-            <Text style={s.avatarText}>{initials}</Text>
-          </TouchableOpacity>
-        </View>
+        <StatsRow
+          streak={streak}
+          avgMood7d={avgMood}
+          totalLogs={totalLogs}
+          onPressStreak={() => router.push('/tabs/tracker?focus=calendar')}
+          onPressAvgMood={() => router.push('/tabs/tracker?focus=chart')}
+          onPressTotalLogs={() => router.push('/tabs/journal')}
+        />
 
-        <View style={s.summaryRow}>
-          <View style={s.summaryCard}>
-            <Text style={s.summaryValue}>{streak}</Text>
-            <Text style={s.summaryLabel}>Chuỗi ngày</Text>
-          </View>
-          <View style={s.summaryCard}>
-            <Text style={s.summaryValue}>{avgMood}</Text>
-            <Text style={s.summaryLabel}>Mood TB 7 ngày</Text>
-          </View>
-          <View style={s.summaryCard}>
-            <Text style={s.summaryValue}>{totalLogs}</Text>
-            <Text style={s.summaryLabel}>Log đã ghi</Text>
-          </View>
-        </View>
-
-        <Text style={s.sectionTitle}>Hôm nay bạn thế nào?</Text>
-
-        <TouchableOpacity
-          style={[s.quickLogCard, homeQuickLogShadow]}
+        <MoodInputCard
+          loggedToday={!!todayLog}
+          todayMoodLabel={moodLabel}
+          todayNote={todayLog?.note ?? null}
           onPress={() => setShowWheel(true)}
-          activeOpacity={0.85}
-        >
-          {loadingLog || savingMood ? (
-            <ActivityIndicator color="#1BAABD" style={s.quickLogLoading} />
-          ) : todayLog && moodInfo ? (
-            <View style={s.quickLogInner}>
-              <Text style={s.quickLogEmoji}>{moodInfo.emoji}</Text>
-              <Text style={s.quickLogTitle}>{moodInfo.name}</Text>
-              {todayLog.note ? (
-                <Text
-                  numberOfLines={2}
-                  style={s.quickLogNote}
-                >
-                  {todayLog.note}
-                </Text>
-              ) : null}
-              <Text style={s.quickLogHint}>
-                Nhấn để thay đổi tâm trạng
-              </Text>
-            </View>
-          ) : (
-            <View style={s.quickLogEmptyInner}>
-              <Text style={s.quickLogEmptyEmoji}>~</Text>
-              <Text style={s.quickLogTitle}>Chạm để ghi lại tâm trạng</Text>
-              <Text style={s.quickLogEmptyHint}>
-                Chọn mood bằng emotion wheel
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        />
 
-        <TouchableOpacity style={s.logBtn} onPress={goToJournal}>
-          <Text style={s.logBtnText}>
-            {todayLog ? 'Tiếp tục viết nhật ký' : 'Ghi nhật ký hôm nay'}
-          </Text>
-        </TouchableOpacity>
+        <View style={s.sectionRow}>
+          <Text style={s.sectionRowTitle}>Cập nhật nhanh hôm nay</Text>
+        </View>
 
-        <View style={s.bottomSpacer} />
+        <QuickActionsGrid />
+
+        <PrimaryCTA
+          label={todayLog ? 'Tiếp tục viết nhật ký' : 'Ghi nhật ký hôm nay'}
+          onPress={goToJournal}
+        />
+
+        <SoraPromoCard />
       </ScrollView>
 
       {showWheel && (

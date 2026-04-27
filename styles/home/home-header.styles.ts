@@ -1,0 +1,78 @@
+import { StyleSheet } from 'react-native';
+
+export const homeHeaderStyles = StyleSheet.create({
+  wrap: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  textBlock: {
+    flex: 1,
+  },
+  greeting: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 12,
+    color: '#6E8597',
+  },
+  username: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 22,
+    color: '#1A3A4A',
+    marginTop: 2,
+  },
+  rightCluster: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1A3A4A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconLabel: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 14,
+    color: '#2E6F8E',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 6,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#D85A30',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#C4DDED',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1A3A4A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  avatarText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 12,
+    color: '#2E6F8E',
+  },
+});

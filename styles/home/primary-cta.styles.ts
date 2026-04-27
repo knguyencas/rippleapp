@@ -1,0 +1,95 @@
+import { StyleSheet } from 'react-native';
+
+export const primaryCtaStyles = StyleSheet.create({
+  wrap: {
+    paddingHorizontal: 20,
+    marginTop: 22,
+  },
+  btn: {
+    backgroundColor: '#2E6F8E',
+    borderRadius: 30,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2E6F8E',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.30,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  btnText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+});
+
+export const soraPromoStyles = StyleSheet.create({
+  wrap: {
+    marginTop: 18,
+    marginHorizontal: 20,
+    backgroundColor: '#FFF3CD',
+    borderRadius: 18,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#B07F1A',
+    shadowOffset: { width: -7, height: 4 },
+    shadowOpacity: 0.20,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  textBlock: {
+    flex: 1,
+  },
+  title: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: '#5A4216',
+    lineHeight: 17,
+  },
+  body: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 11,
+    color: '#8B6F2A',
+    lineHeight: 15,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  ctaPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#2E6F8E',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    shadowColor: '#2E6F8E',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  ctaPillText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 11,
+    color: '#FFFFFF',
+  },
+  mascot: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#C4DDED',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#5B9BC8',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  mascotGlyph: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 22,
+    color: '#2E6F8E',
+  },
+});
