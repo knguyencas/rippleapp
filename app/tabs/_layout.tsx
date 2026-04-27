@@ -57,6 +57,12 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused }) => <TabIcon label="P" focused={focused} />,
         }}
       />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
